@@ -4,11 +4,16 @@
  *
  *   node tools/build.mjs
  *
- * 1. Verifies every file the manifest references actually exists.
- * 2. Regenerates userscript/php-simple-check.user.js from extension/lib/* plus
- *    userscript/main.js (single source of truth for the detection logic).
- * 3. Produces dist/: an unpacked extension copy, a .user.js copy and a zip that
- *    can be side-loaded after unzipping.
+ * 1. Generates the translation table (extension/lib/i18n-data.js) and Chrome's
+ *    _locales/* from locales/*.json.
+ * 2. Verifies every file the manifest references exists.
+ * 3. Regenerates the userscripts from extension/lib/* plus userscript/main.js.
+ * 4. Produces dist/:
+ *      extension/                     unpacked "full" build (cookies + guard)
+ *      php-simple-check-extension-*.zip
+ *      store/php-simple-check/        store build: permissions = ["storage"]
+ *      php-simple-check-store-*.zip   flat zip ready for the Web Store console
+ *      *.user.js                      generic / iOS / Android userscripts
  *
  * No dependencies — a fresh clone can build with Node alone.
  */
@@ -20,25 +25,20 @@ import { createZip } from './zip.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const EXTENSION_DIR = path.join(ROOT, 'extension');
 const USERSCRIPT_DIR = path.join(ROOT, 'userscript');
+const LOCALES_DIR = path.join(ROOT, 'locales');
 const DIST_DIR = path.join(ROOT, 'dist');
 
 const REPO_SLUG = 'yomiplush/php-simple-check';
 const BRANCH = 'main';
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO_SLUG}/${BRANCH}`;
 
-const USERSCRIPT_LIBS = ['detector.js', 'collect-dom.js', 'overlay.js'];
+const USERSCRIPT_LIBS = ['detector.js', 'i18n-data.js', 'i18n.js', 'collect-dom.js', 'overlay.js'];
 
-/**
- * Same detection engine, three entry files so the release page offers the right
- * download per platform. Each one has its own @downloadURL/@updateURL, so an
- * installed copy updates itself from the matching file.
- */
+/** Guard-only files, removed from the store build (no declarativeNetRequest). */
+const GUARD_ONLY_FILES = ['blocked.html', 'blocked.js', 'blocked.css'];
+
 const USERSCRIPT_VARIANTS = [
-  {
-    file: 'php-simple-check.user.js',
-    suffix: '',
-    platform: ''
-  },
+  { file: 'php-simple-check.user.js', suffix: '', platform: '' },
   {
     file: 'php-simple-check-ios.user.js',
     suffix: ' (iOS)',
@@ -68,6 +68,48 @@ async function exists(file) {
   }
 }
 
+/* ------------------------------------------------------------------- i18n */
+
+async function loadLocales() {
+  const files = (await readdir(LOCALES_DIR)).filter((file) => file.endsWith('.json')).sort();
+  const locales = {};
+  for (const file of files) {
+    const language = file.replace(/\.json$/, '');
+    locales[language] = await readJson(path.join(LOCALES_DIR, file));
+  }
+  if (!locales.en) throw new Error('locales/en.json is required');
+  return locales;
+}
+
+async function buildI18n(locales) {
+  const banner = [
+    '/*!',
+    ' * PHP Simple Check — translation table',
+    ' * Generated from locales/*.json by tools/build.mjs. Do not edit by hand.',
+    ' */'
+  ].join('\n');
+  const body = `var PHPSimpleCheckStrings = ${JSON.stringify(locales, null, 2)};\n`;
+  await writeFile(path.join(EXTENSION_DIR, 'lib', 'i18n-data.js'), `${banner}\n${body}`, 'utf8');
+
+  const localesRoot = path.join(EXTENSION_DIR, '_locales');
+  await rm(localesRoot, { recursive: true, force: true });
+  for (const [language, table] of Object.entries(locales)) {
+    // Chrome expects locale directories such as zh_CN / pt_BR.
+    const parts = language.split('-');
+    const folder = parts.length === 1 ? parts[0] : `${parts[0]}_${parts[1].toUpperCase()}`;
+    const directory = path.join(localesRoot, folder);
+    await mkdir(directory, { recursive: true });
+    const messages = {
+      extName: { message: table.extName },
+      extDescription: { message: table.extDescription }
+    };
+    await writeFile(path.join(directory, 'messages.json'), `${JSON.stringify(messages, null, 2)}\n`, 'utf8');
+  }
+  log(`i18n: ${Object.keys(locales).length} locales -> lib/i18n-data.js + _locales/`);
+}
+
+/* --------------------------------------------------------------- manifest */
+
 async function verifyManifest(manifest) {
   const referenced = new Set();
   const collect = (value) => {
@@ -91,32 +133,38 @@ async function verifyManifest(manifest) {
     if (!(await exists(path.join(EXTENSION_DIR, relative)))) missing.push(relative);
   }
   if (missing.length) throw new Error(`manifest.json references missing files: ${missing.join(', ')}`);
+
+  if (manifest.default_locale) {
+    const messages = path.join(EXTENSION_DIR, '_locales', manifest.default_locale, 'messages.json');
+    if (!(await exists(messages))) throw new Error(`missing ${path.relative(ROOT, messages)}`);
+  }
   log(`manifest ok (${referenced.size} referenced files)`);
 }
 
 async function verifyVersions(manifest, pkg) {
   const versions = { 'manifest.json': manifest.version, 'package.json': pkg.version };
-  const unique = new Set(Object.values(versions));
-  if (unique.size !== 1) {
+  if (new Set(Object.values(versions)).size !== 1) {
     throw new Error(`version mismatch: ${JSON.stringify(versions)}`);
   }
   log(`version ${manifest.version}`);
 }
 
-function userscriptDescription(manifest, variant) {
-  return variant.platform
-    ? `${variant.platform}. ${manifest.description}`
-    : manifest.description;
-}
+/* -------------------------------------------------------------- userscripts */
 
-function userscriptHeader(manifest, variant) {
+function userscriptHeader(manifest, locales, variant) {
+  const english = locales.en;
+  const name = english.extName + variant.suffix;
+  const description = variant.platform
+    ? `${variant.platform}. ${english.extDescription}`
+    : english.extDescription;
   const url = `${RAW_BASE}/userscript/${variant.file}`;
-  const lines = [
+
+  return [
     '// ==UserScript==',
-    `// @name         ${manifest.name}${variant.suffix}`,
+    `// @name         ${name}`,
     `// @namespace    https://github.com/${REPO_SLUG}`,
     `// @version      ${manifest.version}`,
-    `// @description  ${userscriptDescription(manifest, variant)}`,
+    `// @description  ${description}`,
     '// @author       yomiplush',
     `// @homepageURL  https://github.com/${REPO_SLUG}`,
     `// @supportURL   https://github.com/${REPO_SLUG}/issues`,
@@ -129,13 +177,11 @@ function userscriptHeader(manifest, variant) {
     '// @noframes',
     `// @icon         ${RAW_BASE}/extension/icons/icon128.png`,
     '// ==/UserScript=='
-  ];
-  return lines.join('\n');
+  ].join('\n');
 }
 
-async function buildUserscripts(manifest) {
+async function buildUserscripts(manifest, locales) {
   const bodies = [];
-
   for (const lib of USERSCRIPT_LIBS) {
     const source = await readFile(path.join(EXTENSION_DIR, 'lib', lib), 'utf8');
     bodies.push(`/* ---- extension/lib/${lib} ---- */`);
@@ -148,14 +194,15 @@ async function buildUserscripts(manifest) {
 
   const built = [];
   for (const variant of USERSCRIPT_VARIANTS) {
-    const content = `${userscriptHeader(manifest, variant)}\n\n${bodies.join('\n\n')}\n`;
-    const target = path.join(USERSCRIPT_DIR, variant.file);
-    await writeFile(target, content, 'utf8');
+    const content = `${userscriptHeader(manifest, locales, variant)}\n\n${bodies.join('\n\n')}\n`;
+    await writeFile(path.join(USERSCRIPT_DIR, variant.file), content, 'utf8');
     log(`userscript ${variant.file} (${(Buffer.byteLength(content) / 1024).toFixed(1)} KiB)`);
-    built.push({ file: variant.file, content: content });
+    built.push({ file: variant.file, content });
   }
   return built;
 }
+
+/* ---------------------------------------------------------------- packaging */
 
 async function listFiles(dir, prefix = '') {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -169,6 +216,35 @@ async function listFiles(dir, prefix = '') {
   return files.sort((a, b) => a.name.localeCompare(b.name));
 }
 
+async function zipDirectory(dir) {
+  const entries = [];
+  for (const file of await listFiles(dir)) {
+    entries.push({ name: file.name, data: await readFile(file.file) });
+  }
+  if (!entries.some((entry) => entry.name === 'manifest.json')) {
+    throw new Error('extension zip must contain manifest.json at its root');
+  }
+  return createZip(entries);
+}
+
+async function buildStoreExtension(manifest) {
+  const storeDir = path.join(DIST_DIR, 'store', 'php-simple-check');
+  await cp(EXTENSION_DIR, storeDir, { recursive: true });
+
+  for (const file of GUARD_ONLY_FILES) {
+    await rm(path.join(storeDir, file), { force: true });
+  }
+
+  const storeManifest = JSON.parse(JSON.stringify(manifest));
+  // The store build asks for the absolute minimum: local settings only.
+  storeManifest.permissions = ['storage'];
+  delete storeManifest.host_permissions;
+  delete storeManifest.web_accessible_resources;
+
+  await writeFile(path.join(storeDir, 'manifest.json'), `${JSON.stringify(storeManifest, null, 2)}\n`, 'utf8');
+  return storeDir;
+}
+
 async function buildDist(manifest, userscripts) {
   await rm(DIST_DIR, { recursive: true, force: true });
   await mkdir(DIST_DIR, { recursive: true });
@@ -177,26 +253,22 @@ async function buildDist(manifest, userscripts) {
   await cp(EXTENSION_DIR, unpacked, { recursive: true });
   log(`dist/extension ready (${(await listFiles(unpacked)).length} files)`);
 
+  const zip = await zipDirectory(EXTENSION_DIR);
+  await writeFile(path.join(DIST_DIR, `php-simple-check-extension-v${manifest.version}.zip`), zip);
+  await writeFile(path.join(DIST_DIR, 'php-simple-check-extension.zip'), zip);
+  log(`dist/php-simple-check-extension-v${manifest.version}.zip (${(zip.length / 1024).toFixed(1)} KiB)`);
+
+  const storeDir = await buildStoreExtension(manifest);
+  const storeZip = await zipDirectory(storeDir);
+  await writeFile(path.join(DIST_DIR, `php-simple-check-store-v${manifest.version}.zip`), storeZip);
+  await writeFile(path.join(DIST_DIR, 'php-simple-check-store.zip'), storeZip);
+  log(
+    `dist/php-simple-check-store-v${manifest.version}.zip (${(storeZip.length / 1024).toFixed(1)} KiB, permissions: storage)`
+  );
+
   for (const userscript of userscripts) {
     await writeFile(path.join(DIST_DIR, userscript.file), userscript.content, 'utf8');
   }
-
-  // Flat archive: manifest.json sits at the zip root, so whatever folder the
-  // extractor creates (usually named after the zip) is directly loadable with
-  // "Load unpacked". A nested php-simple-check-extension/ folder made users
-  // select the parent and hit "Manifest file is missing or unreadable".
-  const zipEntries = [];
-  for (const file of await listFiles(EXTENSION_DIR)) {
-    zipEntries.push({ name: file.name, data: await readFile(file.file) });
-  }
-  if (!zipEntries.some((entry) => entry.name === 'manifest.json')) {
-    throw new Error('extension zip must contain manifest.json at its root');
-  }
-  const zip = createZip(zipEntries);
-  const versionedZip = path.join(DIST_DIR, `php-simple-check-extension-v${manifest.version}.zip`);
-  await writeFile(versionedZip, zip);
-  await writeFile(path.join(DIST_DIR, 'php-simple-check-extension.zip'), zip);
-  log(`dist/${path.basename(versionedZip)} (${(zip.length / 1024).toFixed(1)} KiB)`);
 }
 
 async function main() {
@@ -204,11 +276,16 @@ async function main() {
   const pkg = await readJson(path.join(ROOT, 'package.json'));
 
   await verifyVersions(manifest, pkg);
+  const locales = await loadLocales();
+  await buildI18n(locales);
   await verifyManifest(manifest);
-  const userscripts = await buildUserscripts(manifest);
+
+  const userscripts = await buildUserscripts(manifest, locales);
   await buildDist(manifest, userscripts);
 
-  log('\nDone. Load dist/extension (or extension/) via chrome://extensions → Load unpacked.');
+  log('\nDone.');
+  log('  full build   : dist/extension           (Load unpacked)');
+  log('  store build  : dist/store/php-simple-check  + php-simple-check-store.zip');
 }
 
 main().catch((error) => {

@@ -2,17 +2,35 @@
  * PHP Simple Check — background service worker
  *
  * Responsibilities:
- *   1. Observe main_frame response headers (X-Powered-By, Server, Set-Cookie, …).
- *   2. Collect cookies for the tab URL (including HttpOnly ones) via chrome.cookies.
- *   3. Merge those with the DOM observations sent by content.js, run the shared
- *      detector, then paint the toolbar badge (🔴/🟡/🟢) and tell the page.
+ *   1. Read the page observations reported by content.js (including the response
+ *      headers obtained with one same-origin HEAD request).
+ *   2. Add cookies when the build has the cookies API (the store build does
+ *      not — it falls back to document.cookie).
+ *   3. Run the shared detector, paint the toolbar icon/badge and answer the
+ *      popup.
+ *
+ * Guard mode (blocking flagged hosts) only exists in builds that ship the
+ * declarativeNetRequest permission; every guard entry point checks
+ * CAPABILITIES.guard first, so the same source powers the minimal store build.
  */
 'use strict';
 
-importScripts('lib/detector.js');
+importScripts('lib/detector.js', 'lib/i18n-data.js', 'lib/i18n.js');
+
+const t = PHPSimpleCheckI18n.t;
 
 const STATE_PREFIX = 'php-simple-check:tab:';
 const MAX_TRACKED_TABS = 60;
+
+/** APIs available in this build (the store build only has "storage"). */
+const CAPABILITIES = {
+  cookies: Boolean(typeof chrome.cookies !== 'undefined' && chrome.cookies && chrome.cookies.getAll),
+  guard: Boolean(
+    typeof chrome.declarativeNetRequest !== 'undefined' &&
+    chrome.declarativeNetRequest &&
+    chrome.declarativeNetRequest.updateDynamicRules
+  )
+};
 
 /** The action icon itself shows the verdict, so the toolbar reads at a glance. */
 const STATUS_ICONS = {
@@ -42,16 +60,77 @@ const STATUS_ICONS = {
   }
 };
 
-const IDLE_TITLE = 'PHP Simple Check — analysing…';
-
-const CAPTURED_HEADERS = new Set(['x-powered-by', 'server', 'set-cookie', 'x-generator']);
-const CAPTURED_PREFIXES = ['x-drupal', 'x-typo3', 'x-symfony', 'x-debug-token', 'x-laravel', 'x-php', 'x-csrf'];
-
 const tabStates = new Map();
 const evalTimers = new Map();
 
-/* ------------------------------------------------------------- guard mode */
-/*
+function blankState() {
+  return {
+    url: null,
+    dom: null,
+    result: null,
+    iconState: 'idle',
+    updatedAt: 0
+  };
+}
+
+function trimStates() {
+  if (tabStates.size <= MAX_TRACKED_TABS) return;
+  const oldest = Array.from(tabStates.entries())
+    .sort(function (a, b) { return a[1].updatedAt - b[1].updatedAt; })
+    .slice(0, tabStates.size - MAX_TRACKED_TABS);
+  oldest.forEach(function (entry) { tabStates.delete(entry[0]); });
+}
+
+async function persistState(tabId, state) {
+  try {
+    const key = STATE_PREFIX + tabId;
+    if (!state.url) {
+      await chrome.storage.session.remove(key);
+      return;
+    }
+    await chrome.storage.session.set({
+      [key]: { url: state.url, dom: state.dom, result: state.result, iconState: state.iconState }
+    });
+  } catch (error) {
+    /* session storage is best-effort */
+  }
+}
+
+async function stateFor(tabId) {
+  const cached = tabStates.get(tabId);
+  if (cached) return cached;
+
+  const state = blankState();
+  try {
+    const key = STATE_PREFIX + tabId;
+    const stored = await chrome.storage.session.get(key);
+    const saved = stored[key];
+    if (saved && typeof saved === 'object') {
+      state.url = saved.url || null;
+      state.dom = saved.dom || null;
+      state.result = saved.result || null;
+      state.iconState = saved.iconState || 'idle';
+    }
+  } catch (error) {
+    /* fall back to a blank state */
+  }
+  tabStates.set(tabId, state);
+  trimStates();
+  return state;
+}
+
+function scheduleEvaluation(tabId, delay) {
+  const existing = evalTimers.get(tabId);
+  if (existing) clearTimeout(existing);
+  const timer = setTimeout(function () {
+    evalTimers.delete(tabId);
+    void evaluateTab(tabId);
+  }, delay);
+  evalTimers.set(tabId, timer);
+}
+
+/* ---------------------------------------------------------------- guard mode
+ *
  * "Guard mode": once a site is judged 🔴, block that host on subsequent
  * navigations with a dynamic declarativeNetRequest rule that redirects the main
  * frame to blocked.html. A response cannot be inspected before it is delivered,
@@ -85,6 +164,8 @@ async function writeGuard(guard) {
 }
 
 async function syncGuardRules() {
+  if (!CAPABILITIES.guard) return;
+
   let existing = [];
   try {
     existing = await chrome.declarativeNetRequest.getDynamicRules();
@@ -119,6 +200,7 @@ async function syncGuardRules() {
 }
 
 async function maybeGuard(tabId, result, pageUrl) {
+  if (!CAPABILITIES.guard) return;
   if (!result || result.verdict !== 'php') return;
 
   const guard = await readGuard();
@@ -147,128 +229,7 @@ async function maybeGuard(tabId, result, pageUrl) {
   notifyContent(tabId, { type: 'php-simple-check:guarded', host: host, url: pageUrl });
 }
 
-function blankState() {
-  return {
-    url: null,
-    headers: null,
-    headersDocumentId: null,
-    dom: null,
-    result: null,
-    iconState: 'idle',
-    probedDocumentId: null,
-    probedFallback: false,
-    updatedAt: 0
-  };
-}
-
-function shouldCapture(name) {
-  if (CAPTURED_HEADERS.has(name)) return true;
-  return CAPTURED_PREFIXES.some(function (prefix) { return name.indexOf(prefix) === 0; });
-}
-
-function trimStates() {
-  if (tabStates.size <= MAX_TRACKED_TABS) return;
-  const oldest = Array.from(tabStates.entries())
-    .sort(function (a, b) { return a[1].updatedAt - b[1].updatedAt; })
-    .slice(0, tabStates.size - MAX_TRACKED_TABS);
-  oldest.forEach(function (entry) { tabStates.delete(entry[0]); });
-}
-
-async function persistState(tabId, state) {
-  try {
-    const key = STATE_PREFIX + tabId;
-    if (!state.url) {
-      await chrome.storage.session.remove(key);
-      return;
-    }
-    await chrome.storage.session.set({
-      [key]: {
-        url: state.url,
-        headers: state.headers,
-        headersDocumentId: state.headersDocumentId,
-        result: state.result,
-        iconState: state.iconState
-      }
-    });
-  } catch (error) {
-    /* session storage is best-effort */
-  }
-}
-
-async function stateFor(tabId) {
-  const cached = tabStates.get(tabId);
-  if (cached) return cached;
-
-  const state = blankState();
-  try {
-    const key = STATE_PREFIX + tabId;
-    const stored = await chrome.storage.session.get(key);
-    const saved = stored[key];
-    if (saved && typeof saved === 'object') {
-      state.url = saved.url || null;
-      state.headers = saved.headers || null;
-      state.headersDocumentId = saved.headersDocumentId || null;
-      state.result = saved.result || null;
-      state.iconState = saved.iconState || 'idle';
-    }
-  } catch (error) {
-    /* fall back to a blank state */
-  }
-  tabStates.set(tabId, state);
-  trimStates();
-  return state;
-}
-
-/**
- * webRequest events do not wake a suspended MV3 service worker, so response
- * headers can be missed on a cold start (e.g. the first page after install).
- * A same-origin HEAD request recovers the same evidence at the cost of one
- * extra request — and mirrors what the userscript does.
- */
-const probeCache = new Map();
-
-function probeHeaders(url) {
-  const cached = probeCache.get(url);
-  if (cached) return cached;
-
-  const pending = fetch(url, {
-    method: 'HEAD',
-    credentials: 'include',
-    cache: 'no-store',
-    redirect: 'follow'
-  })
-    .then(function (response) {
-      if (!response.ok) return null;
-      const headers = {};
-      response.headers.forEach(function (value, name) {
-        const key = name.toLowerCase();
-        (headers[key] = headers[key] || []).push(value);
-      });
-      return Object.keys(headers).length ? headers : null;
-    })
-    .catch(function () {
-      return null;
-    });
-
-  probeCache.set(url, pending);
-  setTimeout(function () { probeCache.delete(url); }, 30000);
-  return pending;
-}
-
-function withoutHash(url) {
-  const index = url.indexOf('#');
-  return index === -1 ? url : url.slice(0, index);
-}
-
-function scheduleEvaluation(tabId, delay) {
-  const existing = evalTimers.get(tabId);
-  if (existing) clearTimeout(existing);
-  const timer = setTimeout(function () {
-    evalTimers.delete(tabId);
-    void evaluateTab(tabId);
-  }, delay);
-  evalTimers.set(tabId, timer);
-}
+/* ---------------------------------------------------------------- action UI */
 
 async function applyBadge(tabId, result) {
   const meta = PHPSimpleCheck.verdicts[result.verdict];
@@ -282,7 +243,7 @@ async function applyBadge(tabId, result) {
     await chrome.action.setBadgeText({ tabId: tabId, text: meta.badge });
     await chrome.action.setTitle({
       tabId: tabId,
-      title: meta.emoji + ' ' + meta.label + ' — PHP Simple Check'
+      title: meta.emoji + ' ' + t('verdict.' + result.verdict) + ' — PHP Simple Check'
     });
   } catch (error) {
     /* tab closed while we were working */
@@ -294,7 +255,7 @@ async function resetAction(tabId) {
   try {
     await chrome.action.setIcon({ tabId: tabId, path: STATUS_ICONS.idle });
     await chrome.action.setBadgeText({ tabId: tabId, text: '' });
-    await chrome.action.setTitle({ tabId: tabId, title: IDLE_TITLE });
+    await chrome.action.setTitle({ tabId: tabId, title: t('status.idle') });
   } catch (error) {
     /* tab closed while we were working */
   }
@@ -310,65 +271,41 @@ function notifyContent(tabId, message) {
   }
 }
 
-async function evaluateTab(tabId) {
-  if (tabId == null || tabId < 0) return null;
+/* ------------------------------------------------------------------ judging */
 
-  let tab;
+async function tabUrl(tabId) {
   try {
-    tab = await chrome.tabs.get(tabId);
+    const tab = await chrome.tabs.get(tabId);
+    return tab && tab.url ? tab.url : null;
   } catch (error) {
     return null;
   }
-  if (!tab || !tab.url || !/^https?:/i.test(tab.url)) return null;
+}
+
+async function evaluateTab(tabId) {
+  if (tabId == null || tabId < 0) return null;
 
   const state = await stateFor(tabId);
   const domPayload = state.dom && state.dom.url ? state.dom : null;
-  // The tab URL is authoritative: SPA history changes keep it current, and a
-  // stale DOM payload must not move the verdict to another page.
-  const pageUrl = tab.url || (domPayload && domPayload.url) || state.url;
+
+  // The content script supplies the URL: the store build has no host
+  // permissions, so chrome.tabs.get() does not expose tab.url there.
+  const pageUrl = (domPayload && domPayload.url) || state.url || (await tabUrl(tabId));
+  if (!pageUrl || !/^https?:/i.test(pageUrl)) return null;
+
+  const headers = domPayload && domPayload.headers ? domPayload.headers : null;
 
   let cookieNames = [];
-  try {
-    const cookies = await chrome.cookies.getAll({ url: pageUrl });
-    cookieNames = cookies.map(function (cookie) { return cookie.name; });
-  } catch (error) {
-    /* restricted URL — fall back to what the page itself could read */
+  if (CAPABILITIES.cookies) {
+    try {
+      const cookies = await chrome.cookies.getAll({ url: pageUrl });
+      cookieNames = cookies.map(function (cookie) { return cookie.name; });
+    } catch (error) {
+      /* restricted URL — fall back to what the page itself could read */
+    }
   }
   if (!cookieNames.length && domPayload && Array.isArray(domPayload.cookieNames)) {
     cookieNames = domPayload.cookieNames;
-  }
-
-  // Headers are only trustworthy when they belong to the document we are
-  // judging. webRequest tags them with details.documentId, the content script
-  // reports its own via sender.documentId; anything else is re-probed once.
-  const documentId = domPayload ? domPayload.documentId : null;
-  let headers = state.headers;
-  if (headers && !Object.keys(headers).length) headers = null;
-  if (headers && documentId) {
-    if (state.headersDocumentId !== documentId) headers = null;
-  } else if (headers) {
-    // No document id yet (popup opened, or the worker restarted): only trust
-    // headers captured for exactly this URL.
-    if (!state.url || withoutHash(state.url) !== withoutHash(pageUrl)) headers = null;
-  }
-
-  if (!headers && documentId && state.probedDocumentId !== documentId) {
-    state.probedDocumentId = documentId;
-    headers = await probeHeaders(pageUrl);
-    if (headers) {
-      state.headers = headers;
-      state.headersDocumentId = documentId;
-      state.url = pageUrl;
-      void persistState(tabId, state);
-    }
-  } else if (!headers && !documentId && !state.probedFallback) {
-    state.probedFallback = true;
-    headers = await probeHeaders(pageUrl);
-    if (headers) {
-      state.headers = headers;
-      state.url = pageUrl;
-      void persistState(tabId, state);
-    }
   }
 
   let result;
@@ -393,51 +330,11 @@ async function evaluateTab(tabId) {
 
   await applyBadge(tabId, result);
   notifyContent(tabId, { type: 'php-simple-check:result', result: result });
-  if (result.verdict === 'php') await maybeGuard(tabId, result, pageUrl);
+  await maybeGuard(tabId, result, pageUrl);
   return result;
 }
 
-/* ------------------------------------------------------------------ listeners */
-
-chrome.webRequest.onBeforeRequest.addListener(
-  function (details) {
-    if (details.tabId < 0 || details.type !== 'main_frame') return;
-    const state = blankState();
-    state.url = details.url;
-    state.updatedAt = Date.now();
-    tabStates.set(details.tabId, state);
-    void persistState(details.tabId, state);
-    void resetAction(details.tabId);
-  },
-  { urls: ['http://*/*', 'https://*/*'], types: ['main_frame'] }
-);
-
-chrome.webRequest.onHeadersReceived.addListener(
-  function (details) {
-    if (details.tabId < 0 || details.type !== 'main_frame') return;
-    if (details.statusCode >= 300 && details.statusCode < 400) return;
-
-    const headers = {};
-    (details.responseHeaders || []).forEach(function (header) {
-      const name = String(header.name || '').toLowerCase();
-      if (!shouldCapture(name) || header.value == null) return;
-      const bucket = headers[name] || (headers[name] = []);
-      bucket.push(String(header.value));
-    });
-
-    const state = tabStates.get(details.tabId) || blankState();
-    state.url = details.url;
-    state.headers = headers;
-    state.headersDocumentId = details.documentId || null;
-    state.updatedAt = Date.now();
-    tabStates.set(details.tabId, state);
-    void persistState(details.tabId, state);
-
-    scheduleEvaluation(details.tabId, 1500);
-  },
-  { urls: ['http://*/*', 'https://*/*'], types: ['main_frame'] },
-  ['responseHeaders', 'extraHeaders']
-);
+/* ------------------------------------------------------------------ messages */
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (!message || typeof message !== 'object') return undefined;
@@ -465,13 +362,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     (async function () {
       const state = await stateFor(tabId);
       let result = state.result || null;
-      let currentUrl = null;
-      try {
-        const tab = await chrome.tabs.get(tabId);
-        currentUrl = tab && tab.url ? tab.url : null;
-      } catch (error) {
-        /* tab closed */
-      }
+      const currentUrl = await tabUrl(tabId);
       if (result && currentUrl && result.facts && result.facts.url &&
           withoutHash(result.facts.url) !== withoutHash(currentUrl)) {
         result = null; // the stored verdict belongs to a page the tab has left
@@ -481,27 +372,41 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
         ok: true,
         result: result,
         url: state.url || currentUrl,
-        headers: state.headers || null
+        capabilities: CAPABILITIES
       });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:rescan') {
+    const tabId = message.tabId;
+    (async function () {
+      const result = await evaluateTab(tabId);
+      sendResponse({ ok: Boolean(result), result: result, capabilities: CAPABILITIES });
     })();
     return true;
   }
 
   if (type === 'php-simple-check:get-guard') {
     (async function () {
-      sendResponse({ ok: true, guard: await readGuard() });
+      sendResponse({ ok: true, guard: await readGuard(), capabilities: CAPABILITIES });
     })();
     return true;
   }
 
   if (type === 'php-simple-check:set-guard') {
+    const requested = message.enabled === true;
     (async function () {
+      if (!CAPABILITIES.guard) {
+        sendResponse({ ok: false, error: 'unsupported', capabilities: CAPABILITIES });
+        return;
+      }
       const guard = await readGuard();
-      guard.enabled = message.enabled === true;
+      guard.enabled = requested;
       await writeGuard(guard);
       await syncGuardRules();
       if (guard.enabled && message.tabId != null) await evaluateTab(message.tabId);
-      sendResponse({ ok: true, guard: await readGuard() });
+      sendResponse({ ok: true, guard: await readGuard(), capabilities: CAPABILITIES });
     })();
     return true;
   }
@@ -509,6 +414,10 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   if (type === 'php-simple-check:unblock-host') {
     const host = String(message.host || '');
     (async function () {
+      if (!CAPABILITIES.guard) {
+        sendResponse({ ok: false, error: 'unsupported' });
+        return;
+      }
       const guard = await readGuard();
       if (host && guard.blocked[host]) {
         delete guard.blocked[host];
@@ -553,32 +462,21 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     return true;
   }
 
-  if (type === 'php-simple-check:rescan') {
-    const tabId = message.tabId;
-    (async function () {
-      const result = await evaluateTab(tabId);
-      sendResponse({ ok: Boolean(result), result: result });
-    })();
-    return true;
-  }
-
   return undefined;
 });
 
-// A real navigation starts a new document: drop the previous document's
-// headers/DOM so a cold service worker cannot reuse stale evidence.
-// (status "loading" is not emitted for SPA pushState, so headers survive those.)
+/* ----------------------------------------------------------------- lifecycle */
+
+// A real navigation starts a new document: drop the previous document's DOM and
+// reset the icon so a cold worker cannot show stale evidence.
+// (status "loading" is not emitted for SPA pushState, so the verdict survives.)
 chrome.tabs.onUpdated.addListener(function (tabId, changeInfo) {
   if (changeInfo.status !== 'loading') return;
   const state = tabStates.get(tabId);
   if (!state) return;
   state.url = null;
-  state.headers = null;
-  state.headersDocumentId = null;
   state.dom = null;
   state.result = null;
-  state.probedDocumentId = null;
-  state.probedFallback = false;
   state.iconState = 'idle';
   state.updatedAt = Date.now();
   void persistState(tabId, state);

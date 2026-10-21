@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,41 +9,45 @@
   <body>
     <main class="card">
       <p class="eyebrow">PHP Simple Check — guard mode</p>
-      <h1><span aria-hidden="true">🛑</span> This site was blocked</h1>
+      <h1><span aria-hidden="true">🛑</span> <span data-i18n="blocked.heading">This site was blocked</span></h1>
 
       <p class="host" id="host">…</p>
 
-      <p class="lede">
-        <strong>PHP usage</strong> was detected on this host, so guard mode stopped the load.
+      <p class="lede" data-i18n="blocked.lede">
+        PHP usage was detected on this host, so guard mode stopped the load.
         Review the evidence below and allow it if you trust the site.
       </p>
 
       <dl class="facts" id="facts" hidden>
-        <dt>Score</dt>
+        <dt data-i18n="blocked.score">Score</dt>
         <dd id="score">-</dd>
-        <dt>Detected</dt>
+        <dt data-i18n="blocked.detected">Detected</dt>
         <dd id="checked">-</dd>
       </dl>
 
       <section class="signals" id="signal-section" hidden>
-        <h2>Signals that triggered this</h2>
+        <h2 data-i18n="blocked.signals">Signals that triggered this</h2>
         <ul id="signals"></ul>
       </section>
 
       <div class="actions">
-        <button type="button" id="allow" class="primary">Allow and open</button>
-        <button type="button" id="back" class="secondary">Go back</button>
+        <button type="button" id="allow" class="primary" data-i18n="blocked.allow">Allow and open</button>
+        <button type="button" id="back" class="secondary" data-i18n="blocked.back">Go back</button>
       </div>
 
-      <p class="note" id="note">
+      <p class="note" id="note" data-i18n="blocked.note">
         The block applies to future visits to this host. Allowing removes the rule and adds the host to your allow list.
       </p>
 
       <p class="footer">
-        <button type="button" id="disable" class="link">Turn guard mode off and open</button>
+        <button type="button" id="disable" class="link" data-i18n="blocked.disable">
+          Turn guard mode off and open
+        </button>
       </p>
     </main>
 
+    <script src="lib/i18n-data.js"></script>
+    <script src="lib/i18n.js"></script>
     <script src="blocked.js"></script>
   </body>
 </html>

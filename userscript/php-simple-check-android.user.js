@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check (Android)
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      1.4.0
+// @version      2.0.0
 // @description  For Firefox on Android (Tampermonkey). Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP).
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.4.0';
+  var VERSION = '2.0.0';
 
   var VERDICTS = {
     php: {
@@ -552,6 +552,766 @@
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
+/* ---- extension/lib/i18n-data.js ---- */
+
+/*!
+ * PHP Simple Check — translation table
+ * Generated from locales/*.json by tools/build.mjs. Do not edit by hand.
+ */
+var PHPSimpleCheckStrings = {
+  "ar": {
+    "verdict.php": "تم اكتشاف استخدام PHP",
+    "verdict.maybe": "قد يكون PHP (إشارات ضعيفة فقط)",
+    "verdict.none": "لم يتم العثور على إشارات PHP",
+    "verdict.php.short": "تم اكتشاف PHP",
+    "verdict.maybe.short": "ربما PHP",
+    "verdict.none.short": "لا يوجد PHP",
+    "popup.signals": "الإشارات المكتشفة",
+    "popup.facts": "القيم الملاحظة",
+    "popup.rescan": "إعادة الفحص",
+    "popup.scanning": "جارٍ الفحص…",
+    "popup.overlay": "إظهار الشارة على الصفحة",
+    "popup.notJudged": "لم يتم التقييم بعد",
+    "popup.reload": "أعد تحميل الصفحة أو اضغط «إعادة الفحص»",
+    "popup.meta": "النقاط {score} · الإشارات {count} · {time}",
+    "popup.guard": "وضع الحماية",
+    "popup.guardToggle": "حجب المواقع التي تستخدم PHP",
+    "popup.guardHint": "يتم التقييم بعد تحميل الصفحة، لذا يسري الحجب من الزيارة التالية.",
+    "popup.blocked": "محجوبة",
+    "popup.recorded": "مسجّلة (وضع الحماية متوقف)",
+    "popup.allowed": "مسموحة",
+    "popup.remove": "إزالة",
+    "popup.blockAgain": "حجب مرة أخرى",
+    "popup.note": "الفحص من جانب العميل يرى الإشارات فقط. إذا كان PHP يعمل دون ترك أثر في الاستجابة فستظهر 🟢. تتم المعالجة على جهازك ولا يتم إرسال أي شيء.",
+    "popup.unsupported": "لا يمكن تقييم هذه الصفحة (صفحات chrome:// ومتجر Chrome وغيرها خارج النطاق).",
+    "popup.noTab": "لم يتم العثور على علامة تبويب نشطة.",
+    "popup.noVerdict": "لا توجد نتيجة بعد — جارٍ الفحص تلقائيًا.",
+    "popup.failed": "تعذّر تقييم هذه الصفحة. أعد تحميلها ثم حاول مرة أخرى.",
+    "overlay.summary": "النقاط {score} · إشارات PHP {count}",
+    "overlay.decisive": "إشارة حاسمة",
+    "overlay.empty": "لم يتم اكتشاف أي إشارة",
+    "overlay.close": "إغلاق",
+    "overlay.details": "اضغط لعرض التفاصيل",
+    "overlay.hide": "إخفاء في هذا الموقع",
+    "overlay.note": "الفحص من جانب العميل يرى الإشارات فقط. إذا كان PHP يعمل دون أثر في الاستجابة فستبقى النتيجة 🟢.",
+    "banner.text": "يبدو أن {host} يستخدم PHP. سيقوم وضع الحماية بحجبه في الزيارة التالية.",
+    "banner.allow": "السماح",
+    "banner.leave": "مغادرة",
+    "blocked.heading": "تم حجب هذا الموقع",
+    "blocked.lede": "تم اكتشاف استخدام PHP على هذا المضيف، لذا أوقف وضع الحماية التحميل. راجع الأدلة أدناه واسمح به فقط إذا كنت تثق بالموقع.",
+    "blocked.signals": "الإشارات التي أدت إلى الحجب",
+    "blocked.score": "النقاط",
+    "blocked.detected": "وقت الاكتشاف",
+    "blocked.allow": "السماح والفتح",
+    "blocked.back": "رجوع",
+    "blocked.disable": "إيقاف وضع الحماية والفتح",
+    "blocked.note": "ينطبق الحجب على الزيارات المستقبلية لهذا المضيف. عند السماح تُحذف القاعدة ويُضاف المضيف إلى قائمة السماح.",
+    "blocked.unknown": "(مضيف غير معروف)",
+    "blocked.missing": "لم يتم العثور على سجل لهذا المضيف (قد يكون قد أُزيل). لا يزال «السماح والفتح» يكمل التحميل.",
+    "toast.hidden": "تم إخفاء PHP Simple Check في هذا الموقع",
+    "toast.undo": "تراجع",
+    "status.idle": "PHP Simple Check — جارٍ التقييم…",
+    "extName": "PHP Simple Check",
+    "extDescription": "يفحص ترويسات الاستجابة وملفات تعريف الارتباط وDOM لبيان ما إذا كان الموقع يعمل بـ PHP (🔴 PHP / 🟢 بدون PHP)."
+  },
+  "de": {
+    "verdict.php": "PHP-Nutzung erkannt",
+    "verdict.maybe": "Wahrscheinlich PHP (nur schwache Signale)",
+    "verdict.none": "Keine PHP-Signale gefunden",
+    "verdict.php.short": "PHP erkannt",
+    "verdict.maybe.short": "Wahrscheinlich PHP",
+    "verdict.none.short": "Kein PHP",
+    "popup.signals": "Erkannte Signale",
+    "popup.facts": "Beobachtete Werte",
+    "popup.rescan": "Erneut prüfen",
+    "popup.scanning": "Prüfe…",
+    "popup.overlay": "Badge auf der Seite anzeigen",
+    "popup.notJudged": "Noch nicht geprüft",
+    "popup.reload": "Seite neu laden oder „Erneut prüfen“ drücken",
+    "popup.meta": "Punkte {score} · {count} Signale · {time}",
+    "popup.guard": "Wachmodus",
+    "popup.guardToggle": "Seiten mit PHP blockieren",
+    "popup.guardHint": "Die Prüfung erfolgt nach dem Laden, daher greift die Blockade ab dem nächsten Besuch.",
+    "popup.blocked": "Blockiert",
+    "popup.recorded": "Erfasst (Wachmodus aus)",
+    "popup.allowed": "Erlaubt",
+    "popup.remove": "Entfernen",
+    "popup.blockAgain": "Wieder blockieren",
+    "popup.note": "Clientseitige Prüfungen sehen nur Signale. Läuft PHP ohne Spuren in der Antwort, erscheint 🟢. Alles wird lokal verarbeitet – nichts wird gesendet.",
+    "popup.unsupported": "Diese Seite kann nicht geprüft werden (chrome://-Seiten, Chrome Web Store usw. ausgenommen).",
+    "popup.noTab": "Kein aktiver Tab gefunden.",
+    "popup.noVerdict": "Noch kein Ergebnis – automatische Prüfung läuft.",
+    "popup.failed": "Diese Seite konnte nicht geprüft werden. Neu laden und erneut versuchen.",
+    "overlay.summary": "Punkte {score} · {count} PHP-Signale",
+    "overlay.decisive": "entscheidendes Signal",
+    "overlay.empty": "Keine Signale erkannt",
+    "overlay.close": "Schließen",
+    "overlay.details": "Für Details klicken",
+    "overlay.hide": "Auf dieser Seite ausblenden",
+    "overlay.note": "Clientseitige Prüfungen sehen nur Signale. Läuft PHP ohne Spuren in der Antwort, bleibt das Ergebnis 🟢.",
+    "banner.text": "{host} scheint PHP zu nutzen. Der Wachmodus blockiert die Seite beim nächsten Besuch.",
+    "banner.allow": "Erlauben",
+    "banner.leave": "Verlassen",
+    "blocked.heading": "Diese Seite wurde blockiert",
+    "blocked.lede": "Auf diesem Host wurde PHP-Nutzung erkannt, daher hat der Wachmodus das Laden gestoppt. Prüfe die Hinweise unten und erlaube die Seite nur, wenn du ihr vertraust.",
+    "blocked.signals": "Auslösende Signale",
+    "blocked.score": "Punkte",
+    "blocked.detected": "Erkannt",
+    "blocked.allow": "Erlauben und öffnen",
+    "blocked.back": "Zurück",
+    "blocked.disable": "Wachmodus aus und öffnen",
+    "blocked.note": "Die Blockade gilt für künftige Besuche dieses Hosts. Beim Erlauben wird die Regel entfernt und der Host in die Erlaubnisliste aufgenommen.",
+    "blocked.unknown": "(unbekannter Host)",
+    "blocked.missing": "Für diesen Host wurde kein Eintrag gefunden (vielleicht bereits entfernt). „Erlauben und öffnen“ setzt das Laden trotzdem fort.",
+    "toast.hidden": "PHP Simple Check ist auf dieser Seite ausgeblendet",
+    "toast.undo": "Rückgängig",
+    "status.idle": "PHP Simple Check — prüfe…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Prüft Header, Cookies und DOM und zeigt, ob eine Seite mit PHP ausgeliefert wird (🔴 PHP / 🟢 kein PHP)."
+  },
+  "en": {
+    "verdict.php": "PHP usage detected",
+    "verdict.maybe": "Possibly PHP (weak signals only)",
+    "verdict.none": "No PHP signals found",
+    "verdict.php.short": "PHP detected",
+    "verdict.maybe.short": "Likely PHP",
+    "verdict.none.short": "No PHP",
+    "popup.signals": "Detected signals",
+    "popup.facts": "Observed values",
+    "popup.rescan": "Rescan",
+    "popup.scanning": "Scanning…",
+    "popup.overlay": "Show the page badge",
+    "popup.notJudged": "Not judged yet",
+    "popup.reload": "Reload the page or press Rescan",
+    "popup.meta": "Score {score} · {count} signals · {time}",
+    "popup.guard": "Guard mode",
+    "popup.guardToggle": "Block sites that use PHP",
+    "popup.guardHint": "Detection happens after the page loads, so blocking applies from the next visit.",
+    "popup.blocked": "Blocked",
+    "popup.recorded": "Recorded (guard mode off)",
+    "popup.allowed": "Allowed",
+    "popup.remove": "Remove",
+    "popup.blockAgain": "Block again",
+    "popup.note": "Client-side checks only see signals. PHP running without traces in the response will show 🟢. Everything is processed on your device — nothing is sent anywhere.",
+    "popup.unsupported": "This page cannot be judged (chrome:// pages, the Web Store, etc. are out of scope).",
+    "popup.noTab": "No active tab found.",
+    "popup.noVerdict": "No verdict yet — scanning automatically.",
+    "popup.failed": "This page could not be judged. Reload it and try again.",
+    "overlay.summary": "Score {score} · {count} PHP signals",
+    "overlay.decisive": "decisive signal",
+    "overlay.empty": "No signals detected",
+    "overlay.close": "Close",
+    "overlay.details": "Click for details",
+    "overlay.hide": "Hide on this site",
+    "overlay.note": "Client-side checks only see signals. If PHP runs without leaving traces in the response, the result stays 🟢.",
+    "banner.text": "{host} looks like it runs PHP. Guard mode will block it on the next visit.",
+    "banner.allow": "Allow",
+    "banner.leave": "Leave",
+    "blocked.heading": "This site was blocked",
+    "blocked.lede": "PHP usage was detected on this host, so guard mode stopped the load. Review the evidence below and allow it if you trust the site.",
+    "blocked.signals": "Signals that triggered this",
+    "blocked.score": "Score",
+    "blocked.detected": "Detected",
+    "blocked.allow": "Allow and open",
+    "blocked.back": "Go back",
+    "blocked.disable": "Turn guard mode off and open",
+    "blocked.note": "The block applies to future visits to this host. Allowing removes the rule and adds the host to your allow list.",
+    "blocked.unknown": "(unknown host)",
+    "blocked.missing": "No record for this host was found (it may already have been removed). “Allow and open” still continues the load.",
+    "toast.hidden": "PHP Simple Check is hidden on this site",
+    "toast.undo": "Undo",
+    "status.idle": "PHP Simple Check — analysing…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP)."
+  },
+  "es": {
+    "verdict.php": "Uso de PHP detectado",
+    "verdict.maybe": "Posiblemente PHP (solo señales débiles)",
+    "verdict.none": "No se detectaron señales de PHP",
+    "verdict.php.short": "PHP detectado",
+    "verdict.maybe.short": "Probablemente PHP",
+    "verdict.none.short": "Sin PHP",
+    "popup.signals": "Señales detectadas",
+    "popup.facts": "Valores observados",
+    "popup.rescan": "Volver a analizar",
+    "popup.scanning": "Analizando…",
+    "popup.overlay": "Mostrar la insignia en la página",
+    "popup.notJudged": "Aún sin analizar",
+    "popup.reload": "Recarga la página o pulsa «Volver a analizar»",
+    "popup.meta": "Puntuación {score} · {count} señales · {time}",
+    "popup.guard": "Modo vigilancia",
+    "popup.guardToggle": "Bloquear sitios que usan PHP",
+    "popup.guardHint": "La detección ocurre después de cargar la página, así que el bloqueo se aplica desde la próxima visita.",
+    "popup.blocked": "Bloqueados",
+    "popup.recorded": "Registrados (modo vigilancia desactivado)",
+    "popup.allowed": "Permitidos",
+    "popup.remove": "Quitar",
+    "popup.blockAgain": "Bloquear de nuevo",
+    "popup.note": "Las comprobaciones del lado del cliente solo ven señales. Si PHP se ejecuta sin dejar rastro, se mostrará 🟢. Todo se procesa en tu dispositivo: no se envía nada.",
+    "popup.unsupported": "No se puede analizar esta página (las páginas chrome://, la Chrome Web Store, etc. quedan fuera).",
+    "popup.noTab": "No se encontró ninguna pestaña activa.",
+    "popup.noVerdict": "Aún no hay resultado: analizando automáticamente.",
+    "popup.failed": "No se pudo analizar esta página. Recárgala e inténtalo de nuevo.",
+    "overlay.summary": "Puntuación {score} · {count} señales de PHP",
+    "overlay.decisive": "señal decisiva",
+    "overlay.empty": "No se detectaron señales",
+    "overlay.close": "Cerrar",
+    "overlay.details": "Haz clic para ver detalles",
+    "overlay.hide": "Ocultar en este sitio",
+    "overlay.note": "Las comprobaciones del lado del cliente solo ven señales. Si PHP se ejecuta sin dejar rastro, el resultado sigue siendo 🟢.",
+    "banner.text": "Parece que {host} usa PHP. El modo vigilancia lo bloqueará en la próxima visita.",
+    "banner.allow": "Permitir",
+    "banner.leave": "Salir",
+    "blocked.heading": "Este sitio fue bloqueado",
+    "blocked.lede": "Se detectó uso de PHP en este host, así que el modo vigilancia detuvo la carga. Revisa las pruebas y permítelo solo si confías en el sitio.",
+    "blocked.signals": "Señales que lo provocaron",
+    "blocked.score": "Puntuación",
+    "blocked.detected": "Detectado",
+    "blocked.allow": "Permitir y abrir",
+    "blocked.back": "Volver",
+    "blocked.disable": "Desactivar la vigilancia y abrir",
+    "blocked.note": "El bloqueo se aplica a futuras visitas a este host. Al permitirlo se elimina la regla y se añade el host a tu lista de permitidos.",
+    "blocked.unknown": "(host desconocido)",
+    "blocked.missing": "No se encontró ningún registro para este host (puede que ya se haya eliminado). «Permitir y abrir» sigue cargando la página.",
+    "toast.hidden": "PHP Simple Check está oculto en este sitio",
+    "toast.undo": "Deshacer",
+    "status.idle": "PHP Simple Check — analizando…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Revisa cabeceras, cookies y el DOM para indicar si un sitio se sirve con PHP (🔴 PHP / 🟢 sin PHP)."
+  },
+  "fr": {
+    "verdict.php": "Utilisation de PHP détectée",
+    "verdict.maybe": "PHP possible (signaux faibles uniquement)",
+    "verdict.none": "Aucun signal PHP détecté",
+    "verdict.php.short": "PHP détecté",
+    "verdict.maybe.short": "PHP probable",
+    "verdict.none.short": "Pas de PHP",
+    "popup.signals": "Signaux détectés",
+    "popup.facts": "Valeurs observées",
+    "popup.rescan": "Réanalyser",
+    "popup.scanning": "Analyse…",
+    "popup.overlay": "Afficher le badge sur la page",
+    "popup.notJudged": "Pas encore analysé",
+    "popup.reload": "Rechargez la page ou cliquez sur « Réanalyser »",
+    "popup.meta": "Score {score} · {count} signaux · {time}",
+    "popup.guard": "Mode vigilance",
+    "popup.guardToggle": "Bloquer les sites qui utilisent PHP",
+    "popup.guardHint": "La détection a lieu après le chargement : le blocage s’applique à partir de la visite suivante.",
+    "popup.blocked": "Bloqués",
+    "popup.recorded": "Enregistrés (vigilance désactivée)",
+    "popup.allowed": "Autorisés",
+    "popup.remove": "Retirer",
+    "popup.blockAgain": "Bloquer à nouveau",
+    "popup.note": "Une vérification côté client ne voit que des signaux. Si PHP s’exécute sans laisser de trace, le résultat reste 🟢. Tout est traité sur votre appareil : rien n’est envoyé.",
+    "popup.unsupported": "Cette page ne peut pas être analysée (pages chrome://, Chrome Web Store, etc. exclus).",
+    "popup.noTab": "Aucun onglet actif trouvé.",
+    "popup.noVerdict": "Pas encore de résultat : analyse automatique en cours.",
+    "popup.failed": "Impossible d’analyser cette page. Rechargez-la et réessayez.",
+    "overlay.summary": "Score {score} · {count} signaux PHP",
+    "overlay.decisive": "signal décisif",
+    "overlay.empty": "Aucun signal détecté",
+    "overlay.close": "Fermer",
+    "overlay.details": "Cliquez pour les détails",
+    "overlay.hide": "Masquer sur ce site",
+    "overlay.note": "Une vérification côté client ne voit que des signaux. Si PHP s’exécute sans laisser de trace, le résultat reste 🟢.",
+    "banner.text": "{host} semble utiliser PHP. Le mode vigilance le bloquera à la prochaine visite.",
+    "banner.allow": "Autoriser",
+    "banner.leave": "Quitter",
+    "blocked.heading": "Ce site a été bloqué",
+    "blocked.lede": "Une utilisation de PHP a été détectée sur cet hôte : le mode vigilance a interrompu le chargement. Examinez les preuves ci-dessous et autorisez-le uniquement si vous faites confiance au site.",
+    "blocked.signals": "Signaux à l’origine du blocage",
+    "blocked.score": "Score",
+    "blocked.detected": "Détecté",
+    "blocked.allow": "Autoriser et ouvrir",
+    "blocked.back": "Retour",
+    "blocked.disable": "Désactiver la vigilance et ouvrir",
+    "blocked.note": "Le blocage s’applique aux futures visites de cet hôte. L’autorisation supprime la règle et ajoute l’hôte à votre liste d’autorisation.",
+    "blocked.unknown": "(hôte inconnu)",
+    "blocked.missing": "Aucun enregistrement pour cet hôte (il a peut-être déjà été retiré). « Autoriser et ouvrir » poursuit tout de même le chargement.",
+    "toast.hidden": "PHP Simple Check est masqué sur ce site",
+    "toast.undo": "Annuler",
+    "status.idle": "PHP Simple Check — analyse…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Examine les en-têtes, les cookies et le DOM pour indiquer si un site est servi par PHP (🔴 PHP / 🟢 pas de PHP)."
+  },
+  "hi": {
+    "verdict.php": "PHP का उपयोग पाया गया",
+    "verdict.maybe": "संभवतः PHP (केवल कमज़ोर संकेत)",
+    "verdict.none": "PHP के कोई संकेत नहीं मिले",
+    "verdict.php.short": "PHP मिला",
+    "verdict.maybe.short": "संभवतः PHP",
+    "verdict.none.short": "PHP नहीं",
+    "popup.signals": "मिले हुए संकेत",
+    "popup.facts": "देखे गए मान",
+    "popup.rescan": "फिर जाँचें",
+    "popup.scanning": "जाँच हो रही है…",
+    "popup.overlay": "पेज पर बैज दिखाएँ",
+    "popup.notJudged": "अभी जाँच नहीं हुई",
+    "popup.reload": "पेज रीलोड करें या «फिर जाँचें» दबाएँ",
+    "popup.meta": "स्कोर {score} · {count} संकेत · {time}",
+    "popup.guard": "सतर्कता मोड",
+    "popup.guardToggle": "PHP वाली साइटें ब्लॉक करें",
+    "popup.guardHint": "जाँच पेज लोड होने के बाद होती है, इसलिए ब्लॉक अगली विज़िट से लागू होगा।",
+    "popup.blocked": "ब्लॉक किए गए",
+    "popup.recorded": "दर्ज (सतर्कता मोड बंद)",
+    "popup.allowed": "अनुमत",
+    "popup.remove": "हटाएँ",
+    "popup.blockAgain": "फिर ब्लॉक करें",
+    "popup.note": "क्लाइंट-साइड जाँच केवल संकेत देखती है। अगर PHP बिना निशान छोड़े चल रहा हो तो 🟢 दिखेगा। सब कुछ आपके डिवाइस पर होता है — कहीं कुछ नहीं भेजा जाता।",
+    "popup.unsupported": "इस पेज की जाँच नहीं हो सकती (chrome:// पेज, Chrome Web Store आदि शामिल नहीं हैं)।",
+    "popup.noTab": "कोई सक्रिय टैब नहीं मिला।",
+    "popup.noVerdict": "अभी कोई परिणाम नहीं — स्वचालित रूप से जाँच हो रही है।",
+    "popup.failed": "इस पेज की जाँच नहीं हो सकी। रीलोड करके फिर कोशिश करें।",
+    "overlay.summary": "स्कोर {score} · {count} PHP संकेत",
+    "overlay.decisive": "निर्णायक संकेत",
+    "overlay.empty": "कोई संकेत नहीं मिला",
+    "overlay.close": "बंद करें",
+    "overlay.details": "विवरण के लिए क्लिक करें",
+    "overlay.hide": "इस साइट पर छिपाएँ",
+    "overlay.note": "क्लाइंट-साइड जाँच केवल संकेत देखती है। अगर PHP बिना निशान छोड़े चल रहा हो तो परिणाम 🟢 ही रहेगा।",
+    "banner.text": "{host} संभवतः PHP का उपयोग करता है। सतर्कता मोड इसे अगली विज़िट पर ब्लॉक कर देगा।",
+    "banner.allow": "अनुमति दें",
+    "banner.leave": "छोड़ें",
+    "blocked.heading": "यह साइट ब्लॉक कर दी गई",
+    "blocked.lede": "इस होस्ट पर PHP का उपयोग मिला, इसलिए सतर्कता मोड ने लोड रोक दिया। नीचे सबूत देखें और साइट पर भरोसा हो तभी अनुमति दें।",
+    "blocked.signals": "ब्लॉक करने वाले संकेत",
+    "blocked.score": "स्कोर",
+    "blocked.detected": "पता चला",
+    "blocked.allow": "अनुमति दें और खोलें",
+    "blocked.back": "वापस",
+    "blocked.disable": "सतर्कता मोड बंद करके खोलें",
+    "blocked.note": "यह ब्लॉक इस होस्ट की आगे की विज़िट पर लागू होगा। अनुमति देने पर नियम हट जाता है और होस्ट अनुमत सूची में जुड़ जाता है।",
+    "blocked.unknown": "(अज्ञात होस्ट)",
+    "blocked.missing": "इस होस्ट का कोई रिकॉर्ड नहीं मिला (शायद पहले ही हटा दिया गया)। «अनुमति दें और खोलें» फिर भी लोड जारी रखेगा।",
+    "toast.hidden": "इस साइट पर PHP Simple Check छिपा है",
+    "toast.undo": "पूर्ववत करें",
+    "status.idle": "PHP Simple Check — जाँच हो रही है…",
+    "extName": "PHP Simple Check",
+    "extDescription": "रेस्पॉन्स हेडर, कुकी और DOM देखकर बताता है कि साइट PHP से चल रही है या नहीं (🔴 PHP / 🟢 PHP नहीं)।"
+  },
+  "ja": {
+    "verdict.php": "PHP 使用の兆候あり",
+    "verdict.maybe": "PHP の可能性あり（弱い兆候のみ）",
+    "verdict.none": "PHP の兆候なし",
+    "verdict.php.short": "PHP 検出",
+    "verdict.maybe.short": "要確認",
+    "verdict.none.short": "PHP 非検出",
+    "popup.signals": "検出したシグナル",
+    "popup.facts": "確認できた値",
+    "popup.rescan": "再スキャン",
+    "popup.scanning": "スキャン中…",
+    "popup.overlay": "ページ上にバッジを表示",
+    "popup.notJudged": "まだ判定していません",
+    "popup.reload": "再読み込みするか「再スキャン」を押してください",
+    "popup.meta": "スコア {score} ・ 手がかり {count} 件 ・ {time}",
+    "popup.guard": "警戒モード",
+    "popup.guardToggle": "PHP を検出したサイトをブロック",
+    "popup.guardHint": "判定はページ読み込み後に行うため、ブロックは次回以降のアクセスに適用されます。",
+    "popup.blocked": "ブロック中",
+    "popup.recorded": "記録済み（警戒モード OFF）",
+    "popup.allowed": "許可済み",
+    "popup.remove": "解除",
+    "popup.blockAgain": "ブロックに戻す",
+    "popup.note": "クライアント側で観測できるのは「兆候」だけです。応答に痕跡がない場合は 🟢 になります。判定は端末内で完結し、外部へ送信しません。",
+    "popup.unsupported": "このページでは判定できません（chrome:// や Web Store などは対象外です）。",
+    "popup.noTab": "アクティブなタブが見つかりません。",
+    "popup.noVerdict": "判定結果がまだありません。自動で再スキャンします。",
+    "popup.failed": "このページは判定できませんでした。再読み込みしてから試してください。",
+    "overlay.summary": "スコア {score} ・ PHP の手がかり {count} 件",
+    "overlay.decisive": "決定的なシグナルあり",
+    "overlay.empty": "検出できたシグナルはありません",
+    "overlay.close": "閉じる",
+    "overlay.details": "クリックで詳細を表示",
+    "overlay.hide": "このサイトでは表示しない",
+    "overlay.note": "クライアント側で観測できるのは「兆候」だけです。応答に痕跡が出ない場合は 🟢 になります。",
+    "banner.text": "{host} は PHP 使用の兆候あり。警戒モードにより次回からブロックします。",
+    "banner.allow": "許可する",
+    "banner.leave": "離れる",
+    "blocked.heading": "このサイトはブロックされました",
+    "blocked.lede": "このホストでは PHP 使用の兆候が検出されたため、警戒モードが読み込みを止めました。内容を確認し、信頼できる場合のみ許可してください。",
+    "blocked.signals": "検出していたシグナル",
+    "blocked.score": "スコア",
+    "blocked.detected": "検出時刻",
+    "blocked.allow": "許可して開く",
+    "blocked.back": "戻る",
+    "blocked.disable": "警戒モードをオフにして開く",
+    "blocked.note": "ブロックはこのホストへの今後のアクセスに適用されます。許可するとルールを削除し、許可リストに追加します。",
+    "blocked.unknown": "（不明なホスト）",
+    "blocked.missing": "このホストの記録が見つかりませんでした（すでに解除された可能性があります）。「許可して開く」で読み込みを続けられます。",
+    "toast.hidden": "このサイトではバッジを表示しません",
+    "toast.undo": "元に戻す",
+    "status.idle": "PHP Simple Check — 判定中…",
+    "extName": "PHP Simple Check",
+    "extDescription": "レスポンスヘッダー・Cookie・DOM から、サイトが PHP で動いているかを判定します（🔴 PHP / 🟢 非 PHP）。"
+  },
+  "ko": {
+    "verdict.php": "PHP 사용 감지됨",
+    "verdict.maybe": "PHP일 가능성 (약한 신호만)",
+    "verdict.none": "PHP 신호 없음",
+    "verdict.php.short": "PHP 감지",
+    "verdict.maybe.short": "PHP 가능성",
+    "verdict.none.short": "PHP 없음",
+    "popup.signals": "감지된 신호",
+    "popup.facts": "확인된 값",
+    "popup.rescan": "다시 검사",
+    "popup.scanning": "검사 중…",
+    "popup.overlay": "페이지에 배지 표시",
+    "popup.notJudged": "아직 판정하지 않음",
+    "popup.reload": "페이지를 새로 고치거나 '다시 검사'를 누르세요",
+    "popup.meta": "점수 {score} · 신호 {count}개 · {time}",
+    "popup.guard": "경계 모드",
+    "popup.guardToggle": "PHP를 사용하는 사이트 차단",
+    "popup.guardHint": "판정은 페이지 로드 후에 이루어지므로 차단은 다음 방문부터 적용됩니다.",
+    "popup.blocked": "차단됨",
+    "popup.recorded": "기록됨 (경계 모드 꺼짐)",
+    "popup.allowed": "허용됨",
+    "popup.remove": "해제",
+    "popup.blockAgain": "다시 차단",
+    "popup.note": "클라이언트에서는 징후만 볼 수 있습니다. 응답에 흔적이 없으면 🟢로 표시됩니다. 모든 처리는 기기 안에서 이루어지며 외부로 전송하지 않습니다.",
+    "popup.unsupported": "이 페이지는 판정할 수 없습니다 (chrome:// 페이지, 웹 스토어 등은 대상이 아닙니다).",
+    "popup.noTab": "활성 탭을 찾을 수 없습니다.",
+    "popup.noVerdict": "아직 결과가 없습니다. 자동으로 다시 검사합니다.",
+    "popup.failed": "이 페이지를 판정할 수 없습니다. 새로 고친 후 다시 시도하세요.",
+    "overlay.summary": "점수 {score} · PHP 신호 {count}개",
+    "overlay.decisive": "결정적 신호 있음",
+    "overlay.empty": "감지된 신호가 없습니다",
+    "overlay.close": "닫기",
+    "overlay.details": "클릭하여 자세히 보기",
+    "overlay.hide": "이 사이트에서 숨기기",
+    "overlay.note": "클라이언트에서는 징후만 볼 수 있습니다. 응답에 흔적이 없으면 결과는 🟢입니다.",
+    "banner.text": "{host}은(는) PHP를 사용하는 것으로 보입니다. 경계 모드가 다음 방문부터 차단합니다.",
+    "banner.allow": "허용",
+    "banner.leave": "나가기",
+    "blocked.heading": "이 사이트를 차단했습니다",
+    "blocked.lede": "이 호스트에서 PHP 사용이 감지되어 경계 모드가 로드를 중단했습니다. 아래 근거를 확인하고 신뢰하는 경우에만 허용하세요.",
+    "blocked.signals": "차단을 유발한 신호",
+    "blocked.score": "점수",
+    "blocked.detected": "감지 시각",
+    "blocked.allow": "허용하고 열기",
+    "blocked.back": "뒤로",
+    "blocked.disable": "경계 모드를 끄고 열기",
+    "blocked.note": "차단은 이 호스트의 이후 방문에 적용됩니다. 허용하면 규칙이 삭제되고 허용 목록에 추가됩니다.",
+    "blocked.unknown": "(알 수 없는 호스트)",
+    "blocked.missing": "이 호스트의 기록을 찾을 수 없습니다 (이미 해제되었을 수 있습니다). '허용하고 열기'로 계속 진행할 수 있습니다.",
+    "toast.hidden": "이 사이트에서 배지를 숨겼습니다",
+    "toast.undo": "되돌리기",
+    "status.idle": "PHP Simple Check — 판정 중…",
+    "extName": "PHP Simple Check",
+    "extDescription": "응답 헤더, 쿠키, DOM을 확인해 사이트가 PHP로 제공되는지 판정합니다 (🔴 PHP / 🟢 PHP 없음)."
+  },
+  "pt-br": {
+    "verdict.php": "Uso de PHP detectado",
+    "verdict.maybe": "Possivelmente PHP (apenas sinais fracos)",
+    "verdict.none": "Nenhum sinal de PHP encontrado",
+    "verdict.php.short": "PHP detectado",
+    "verdict.maybe.short": "Provavelmente PHP",
+    "verdict.none.short": "Sem PHP",
+    "popup.signals": "Sinais detectados",
+    "popup.facts": "Valores observados",
+    "popup.rescan": "Analisar novamente",
+    "popup.scanning": "Analisando…",
+    "popup.overlay": "Mostrar o selo na página",
+    "popup.notJudged": "Ainda não analisado",
+    "popup.reload": "Recarregue a página ou clique em «Analisar novamente»",
+    "popup.meta": "Pontuação {score} · {count} sinais · {time}",
+    "popup.guard": "Modo vigilância",
+    "popup.guardToggle": "Bloquear sites que usam PHP",
+    "popup.guardHint": "A detecção acontece após o carregamento, então o bloqueio vale a partir da próxima visita.",
+    "popup.blocked": "Bloqueados",
+    "popup.recorded": "Registrados (vigilância desativada)",
+    "popup.allowed": "Permitidos",
+    "popup.remove": "Remover",
+    "popup.blockAgain": "Bloquear novamente",
+    "popup.note": "Verificações no cliente só veem sinais. Se o PHP rodar sem deixar rastros na resposta, o resultado será 🟢. Tudo é processado no seu dispositivo — nada é enviado.",
+    "popup.unsupported": "Não é possível analisar esta página (páginas chrome://, Chrome Web Store etc. ficam de fora).",
+    "popup.noTab": "Nenhuma aba ativa encontrada.",
+    "popup.noVerdict": "Ainda sem resultado — analisando automaticamente.",
+    "popup.failed": "Não foi possível analisar esta página. Recarregue e tente de novo.",
+    "overlay.summary": "Pontuação {score} · {count} sinais de PHP",
+    "overlay.decisive": "sinal decisivo",
+    "overlay.empty": "Nenhum sinal detectado",
+    "overlay.close": "Fechar",
+    "overlay.details": "Clique para ver detalhes",
+    "overlay.hide": "Ocultar neste site",
+    "overlay.note": "Verificações no cliente só veem sinais. Se o PHP rodar sem deixar rastros na resposta, o resultado continua 🟢.",
+    "banner.text": "{host} parece usar PHP. O modo vigilância vai bloquear na próxima visita.",
+    "banner.allow": "Permitir",
+    "banner.leave": "Sair",
+    "blocked.heading": "Este site foi bloqueado",
+    "blocked.lede": "Foi detectado uso de PHP neste host, então o modo vigilância interrompeu o carregamento. Revise as evidências abaixo e permita apenas se confiar no site.",
+    "blocked.signals": "Sinais que acionaram o bloqueio",
+    "blocked.score": "Pontuação",
+    "blocked.detected": "Detectado",
+    "blocked.allow": "Permitir e abrir",
+    "blocked.back": "Voltar",
+    "blocked.disable": "Desativar a vigilância e abrir",
+    "blocked.note": "O bloqueio vale para futuras visitas a este host. Permitir remove a regra e adiciona o host à sua lista de permitidos.",
+    "blocked.unknown": "(host desconhecido)",
+    "blocked.missing": "Nenhum registro encontrado para este host (talvez já tenha sido removido). «Permitir e abrir» continua o carregamento mesmo assim.",
+    "toast.hidden": "PHP Simple Check está oculto neste site",
+    "toast.undo": "Desfazer",
+    "status.idle": "PHP Simple Check — analisando…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Verifica cabeçalhos, cookies e o DOM para indicar se um site é servido por PHP (🔴 PHP / 🟢 sem PHP)."
+  },
+  "ru": {
+    "verdict.php": "Обнаружено использование PHP",
+    "verdict.maybe": "Возможно, PHP (только слабые признаки)",
+    "verdict.none": "Признаков PHP не найдено",
+    "verdict.php.short": "PHP обнаружен",
+    "verdict.maybe.short": "Возможно, PHP",
+    "verdict.none.short": "PHP нет",
+    "popup.signals": "Обнаруженные признаки",
+    "popup.facts": "Наблюдаемые значения",
+    "popup.rescan": "Проверить снова",
+    "popup.scanning": "Проверка…",
+    "popup.overlay": "Показывать значок на странице",
+    "popup.notJudged": "Ещё не проверено",
+    "popup.reload": "Перезагрузите страницу или нажмите «Проверить снова»",
+    "popup.meta": "Баллы {score} · признаков: {count} · {time}",
+    "popup.guard": "Режим бдительности",
+    "popup.guardToggle": "Блокировать сайты на PHP",
+    "popup.guardHint": "Проверка выполняется после загрузки, поэтому блокировка действует со следующего визита.",
+    "popup.blocked": "Заблокированы",
+    "popup.recorded": "Записаны (режим выключен)",
+    "popup.allowed": "Разрешены",
+    "popup.remove": "Убрать",
+    "popup.blockAgain": "Заблокировать снова",
+    "popup.note": "Клиентская проверка видит только признаки. Если PHP работает без следов в ответе, будет 🟢. Всё обрабатывается на устройстве — данные никуда не отправляются.",
+    "popup.unsupported": "Эту страницу нельзя проверить (страницы chrome://, Chrome Web Store и т. п. не поддерживаются).",
+    "popup.noTab": "Активная вкладка не найдена.",
+    "popup.noVerdict": "Результата пока нет — выполняется автоматическая проверка.",
+    "popup.failed": "Не удалось проверить страницу. Перезагрузите её и попробуйте снова.",
+    "overlay.summary": "Баллы {score} · признаков PHP: {count}",
+    "overlay.decisive": "решающий признак",
+    "overlay.empty": "Признаков не обнаружено",
+    "overlay.close": "Закрыть",
+    "overlay.details": "Нажмите, чтобы увидеть подробности",
+    "overlay.hide": "Скрыть на этом сайте",
+    "overlay.note": "Клиентская проверка видит только признаки. Если PHP работает без следов в ответе, результат останется 🟢.",
+    "banner.text": "Похоже, {host} использует PHP. Режим бдительности заблокирует его при следующем визите.",
+    "banner.allow": "Разрешить",
+    "banner.leave": "Уйти",
+    "blocked.heading": "Сайт заблокирован",
+    "blocked.lede": "На этом хосте обнаружено использование PHP, поэтому режим бдительности остановил загрузку. Проверьте признаки ниже и разрешите сайт, только если доверяете ему.",
+    "blocked.signals": "Признаки, вызвавшие блокировку",
+    "blocked.score": "Баллы",
+    "blocked.detected": "Обнаружено",
+    "blocked.allow": "Разрешить и открыть",
+    "blocked.back": "Назад",
+    "blocked.disable": "Выключить режим и открыть",
+    "blocked.note": "Блокировка действует для последующих визитов на этот хост. При разрешении правило удаляется, а хост добавляется в список разрешённых.",
+    "blocked.unknown": "(неизвестный хост)",
+    "blocked.missing": "Запись для этого хоста не найдена (возможно, уже удалена). «Разрешить и открыть» всё равно продолжит загрузку.",
+    "toast.hidden": "PHP Simple Check скрыт на этом сайте",
+    "toast.undo": "Отменить",
+    "status.idle": "PHP Simple Check — проверка…",
+    "extName": "PHP Simple Check",
+    "extDescription": "Проверяет заголовки, cookie и DOM, чтобы показать, отдаётся ли сайт на PHP (🔴 PHP / 🟢 без PHP)."
+  },
+  "zh-cn": {
+    "verdict.php": "检测到使用 PHP",
+    "verdict.maybe": "可能使用 PHP（仅有微弱迹象）",
+    "verdict.none": "未发现 PHP 迹象",
+    "verdict.php.short": "检测到 PHP",
+    "verdict.maybe.short": "可能是 PHP",
+    "verdict.none.short": "无 PHP",
+    "popup.signals": "检测到的信号",
+    "popup.facts": "观测到的值",
+    "popup.rescan": "重新检测",
+    "popup.scanning": "检测中…",
+    "popup.overlay": "在页面上显示徽标",
+    "popup.notJudged": "尚未判定",
+    "popup.reload": "请重新加载页面或点击「重新检测」",
+    "popup.meta": "分数 {score} · 信号 {count} 个 · {time}",
+    "popup.guard": "警戒模式",
+    "popup.guardToggle": "阻止使用 PHP 的网站",
+    "popup.guardHint": "判定在页面加载后进行，因此阻止从下次访问开始生效。",
+    "popup.blocked": "已阻止",
+    "popup.recorded": "已记录（警戒模式关闭）",
+    "popup.allowed": "已允许",
+    "popup.remove": "解除",
+    "popup.blockAgain": "重新阻止",
+    "popup.note": "客户端只能观测到迹象。若响应中没有痕迹，即使运行 PHP 也会显示 🟢。所有处理都在本机完成，不会向外发送。",
+    "popup.unsupported": "无法判定此页面（chrome:// 页面、应用商店等不在范围内）。",
+    "popup.noTab": "未找到活动标签页。",
+    "popup.noVerdict": "尚无判定结果，正在自动重新检测。",
+    "popup.failed": "无法判定此页面，请重新加载后再试。",
+    "overlay.summary": "分数 {score} · PHP 信号 {count} 个",
+    "overlay.decisive": "存在决定性信号",
+    "overlay.empty": "未检测到任何信号",
+    "overlay.close": "关闭",
+    "overlay.details": "点击查看详情",
+    "overlay.hide": "在此网站隐藏",
+    "overlay.note": "客户端只能观测到迹象。若响应中没有痕迹，结果仍为 🟢。",
+    "banner.text": "{host} 可能使用 PHP。警戒模式将在下次访问时阻止。",
+    "banner.allow": "允许",
+    "banner.leave": "离开",
+    "blocked.heading": "此网站已被阻止",
+    "blocked.lede": "在此主机上检测到 PHP 使用迹象，警戒模式已停止加载。请查看下面的证据，确认可信后再允许。",
+    "blocked.signals": "触发阻止的信号",
+    "blocked.score": "分数",
+    "blocked.detected": "检测时间",
+    "blocked.allow": "允许并打开",
+    "blocked.back": "返回",
+    "blocked.disable": "关闭警戒模式并打开",
+    "blocked.note": "阻止会应用于此后访问该主机的请求。允许后将删除规则并加入允许列表。",
+    "blocked.unknown": "（未知主机）",
+    "blocked.missing": "未找到该主机的记录（可能已被解除）。仍可使用「允许并打开」继续加载。",
+    "toast.hidden": "已在此网站隐藏徽标",
+    "toast.undo": "撤销",
+    "status.idle": "PHP Simple Check — 判定中…",
+    "extName": "PHP Simple Check",
+    "extDescription": "通过响应头、Cookie 与 DOM 判断网站是否由 PHP 提供（🔴 PHP / 🟢 非 PHP）。"
+  },
+  "zh-tw": {
+    "verdict.php": "偵測到使用 PHP",
+    "verdict.maybe": "可能使用 PHP（僅有微弱跡象）",
+    "verdict.none": "未發現 PHP 跡象",
+    "verdict.php.short": "偵測到 PHP",
+    "verdict.maybe.short": "可能是 PHP",
+    "verdict.none.short": "無 PHP",
+    "popup.signals": "偵測到的訊號",
+    "popup.facts": "觀測到的值",
+    "popup.rescan": "重新偵測",
+    "popup.scanning": "偵測中…",
+    "popup.overlay": "在頁面上顯示標章",
+    "popup.notJudged": "尚未判定",
+    "popup.reload": "請重新載入頁面或按下「重新偵測」",
+    "popup.meta": "分數 {score} · 訊號 {count} 個 · {time}",
+    "popup.guard": "警戒模式",
+    "popup.guardToggle": "封鎖使用 PHP 的網站",
+    "popup.guardHint": "判定在頁面載入後進行，因此封鎖會從下次造訪開始生效。",
+    "popup.blocked": "已封鎖",
+    "popup.recorded": "已記錄（警戒模式關閉）",
+    "popup.allowed": "已允許",
+    "popup.remove": "解除",
+    "popup.blockAgain": "重新封鎖",
+    "popup.note": "用戶端只能觀測到跡象。若回應中沒有痕跡，即使執行 PHP 也會顯示 🟢。所有處理都在本機完成，不會對外傳送。",
+    "popup.unsupported": "無法判定此頁面（chrome:// 頁面、應用程式商店等不在範圍內）。",
+    "popup.noTab": "找不到使用中的分頁。",
+    "popup.noVerdict": "尚無判定結果，正在自動重新偵測。",
+    "popup.failed": "無法判定此頁面，請重新載入後再試。",
+    "overlay.summary": "分數 {score} · PHP 訊號 {count} 個",
+    "overlay.decisive": "存在決定性訊號",
+    "overlay.empty": "未偵測到任何訊號",
+    "overlay.close": "關閉",
+    "overlay.details": "點擊查看詳情",
+    "overlay.hide": "在此網站隱藏",
+    "overlay.note": "用戶端只能觀測到跡象。若回應中沒有痕跡，結果仍為 🟢。",
+    "banner.text": "{host} 可能使用 PHP。警戒模式將在下次造訪時封鎖。",
+    "banner.allow": "允許",
+    "banner.leave": "離開",
+    "blocked.heading": "此網站已被封鎖",
+    "blocked.lede": "在此主機上偵測到 PHP 使用跡象，警戒模式已停止載入。請檢視下方證據，確認可信後再允許。",
+    "blocked.signals": "觸發封鎖的訊號",
+    "blocked.score": "分數",
+    "blocked.detected": "偵測時間",
+    "blocked.allow": "允許並開啟",
+    "blocked.back": "返回",
+    "blocked.disable": "關閉警戒模式並開啟",
+    "blocked.note": "封鎖會套用於此後造訪該主機的請求。允許後將刪除規則並加入允許清單。",
+    "blocked.unknown": "（未知主機）",
+    "blocked.missing": "找不到該主機的記錄（可能已解除）。仍可使用「允許並開啟」繼續載入。",
+    "toast.hidden": "已在此網站隱藏標章",
+    "toast.undo": "復原",
+    "status.idle": "PHP Simple Check — 判定中…",
+    "extName": "PHP Simple Check",
+    "extDescription": "透過回應標頭、Cookie 與 DOM 判斷網站是否由 PHP 提供（🔴 PHP / 🟢 非 PHP）。"
+  }
+};
+
+/* ---- extension/lib/i18n.js ---- */
+
+/*!
+ * PHP Simple Check — runtime translations
+ *
+ * The UI is localised from a plain table (`lib/i18n-data.js`) instead of
+ * chrome.i18n so the very same code runs in the extension, in extension pages
+ * and in the userscript (where chrome.i18n does not exist).
+ *
+ * Lookup order: Chrome UI language -> browser languages -> English.
+ * Placeholders use {name}; unknown keys fall back to English, then to the key.
+ */
+(function (global) {
+  'use strict';
+
+  var DATA = global.PHPSimpleCheckStrings || {};
+  var FALLBACK = 'en';
+  var RTL_LANGUAGES = ['ar', 'he', 'fa', 'ur', 'yi'];
+
+  function normalize(tag) {
+    return String(tag || '').replace(/_/g, '-').toLowerCase();
+  }
+
+  function resolve(tag) {
+    var value = normalize(tag);
+    if (!value) return null;
+    if (DATA[value]) return value;
+    if (value.indexOf('zh') === 0) {
+      // Script subtags win over region: zh-Hant-HK is traditional.
+      var traditional = value.indexOf('hant') !== -1 || value === 'zh-tw' || value === 'zh-hk' || value === 'zh-mo';
+      var preferred = traditional ? 'zh-tw' : 'zh-cn';
+      var secondary = traditional ? 'zh-cn' : 'zh-tw';
+      if (DATA[preferred]) return preferred;
+      return DATA[secondary] ? secondary : null;
+    }
+    var base = value.split('-')[0];
+    return DATA[base] ? base : null;
+  }
+
+  function detect() {
+    try {
+      if (global.chrome && chrome.i18n && typeof chrome.i18n.getUILanguage === 'function') {
+        var fromChrome = resolve(chrome.i18n.getUILanguage());
+        if (fromChrome) return fromChrome;
+      }
+    } catch (error) {
+      /* not an extension context */
+    }
+    var navigatorObject = global.navigator;
+    if (!navigatorObject) return FALLBACK;
+    var candidates = navigatorObject.languages && navigatorObject.languages.length
+      ? Array.prototype.slice.call(navigatorObject.languages)
+      : [navigatorObject.language];
+    for (var i = 0; i < candidates.length; i += 1) {
+      var match = resolve(candidates[i]);
+      if (match) return match;
+    }
+    return FALLBACK;
+  }
+
+  var locale = detect();
+  var table = DATA[locale] || DATA[FALLBACK] || {};
+
+  function format(template, vars) {
+    return String(template).replace(/\{(\w+)\}/g, function (match, key) {
+      return vars && Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match;
+    });
+  }
+
+  function t(key, vars) {
+    var template = table[key];
+    if (template == null && DATA[FALLBACK]) template = DATA[FALLBACK][key];
+    if (template == null) return key;
+    return format(template, vars);
+  }
+
+  function n(key, count) {
+    return t(key, { count: count });
+  }
+
+  var base = locale.split('-')[0];
+
+  global.PHPSimpleCheckI18n = {
+    locale: locale,
+    t: t,
+    n: n,
+    dir: RTL_LANGUAGES.indexOf(base) !== -1 ? 'rtl' : 'ltr',
+    languages: Object.keys(DATA)
+  };
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+
 /* ---- extension/lib/collect-dom.js ---- */
 
 /*!
@@ -707,6 +1467,33 @@
       .filter(Boolean);
   }
 
+  /**
+   * Reads the response headers of this document with one same-origin HEAD
+   * request. Running it from the content script (instead of the worker) means
+   * the extension needs no host permissions and no webRequest access: the
+   * request is indistinguishable from the page asking for its own headers.
+   */
+  function probeHeaders(url) {
+    return fetch(url || location.href, {
+      method: 'HEAD',
+      credentials: 'include',
+      cache: 'no-store',
+      redirect: 'follow'
+    })
+      .then(function (response) {
+        if (!response.ok) return null;
+        var headers = {};
+        response.headers.forEach(function (value, name) {
+          var key = name.toLowerCase();
+          (headers[key] = headers[key] || []).push(value);
+        });
+        return Object.keys(headers).length ? headers : null;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   function collect(options) {
     var settings = options || {};
     var inline = settings.includeInlineScripts === false ? '' : inlineScriptText();
@@ -732,7 +1519,7 @@
     };
   }
 
-  global.PHPSimpleCheckDom = { collect: collect };
+  global.PHPSimpleCheckDom = { collect: collect, probeHeaders: probeHeaders };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 /* ---- extension/lib/overlay.js ---- */
@@ -746,6 +1533,9 @@
  */
 (function (global) {
   'use strict';
+
+  var t = global.PHPSimpleCheckI18n.t;
+  var textDirection = global.PHPSimpleCheckI18n.dir;
 
   var HOST_ID = 'php-simple-check-badge';
   var CSS = [
@@ -849,22 +1639,25 @@
     bar.setAttribute('role', 'alert');
     bar.appendChild(el('span', 'icon', '⚠'));
 
+    // Keep the host visually distinct while letting each language put it
+    // wherever its grammar needs it.
+    var template = t('banner.text', { host: '\u0000host\u0000' });
+    var segments = template.split('\u0000host\u0000');
     var text = el('span', 'text');
-    text.appendChild(el('span', 'host', settings.host || 'This site'));
-    text.appendChild(
-      el('span', null, ' looks like it runs PHP. Guard mode will block it on the next visit.')
-    );
+    text.appendChild(el('span', null, segments[0]));
+    text.appendChild(el('span', 'host', settings.host || ''));
+    if (segments[1]) text.appendChild(el('span', null, segments[1]));
 
     var actions = el('span', 'actions');
 
-    var allow = el('button', 'allow', 'Allow');
+    var allow = el('button', 'allow', t('banner.allow'));
     allow.type = 'button';
     allow.addEventListener('click', function () {
       hideGuardBanner();
       if (banner.onAllow) banner.onAllow();
     });
 
-    var leave = el('button', null, 'Leave');
+    var leave = el('button', null, t('banner.leave'));
     leave.type = 'button';
     leave.addEventListener('click', function () {
       if (banner.onLeave) banner.onLeave();
@@ -873,13 +1666,14 @@
 
     var close = el('button', null, '×');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Close');
+    close.setAttribute('aria-label', t('overlay.close'));
     close.addEventListener('click', hideGuardBanner);
 
     actions.appendChild(allow);
     actions.appendChild(leave);
     actions.appendChild(close);
 
+    bar.setAttribute('dir', textDirection);
     bar.appendChild(text);
     bar.appendChild(actions);
     shadow.appendChild(style);
@@ -899,6 +1693,13 @@
     onClose: null,
     onSiteDismiss: null
   };
+
+  function translatedVerdict(result, suffix) {
+    var key = 'verdict.' + result.verdict + (suffix || '');
+    var value = t(key);
+    if (value === key) return suffix ? result.short || result.label : result.label;
+    return value;
+  }
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -934,14 +1735,14 @@
     var panel = el('section', 'panel');
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'PHP Simple Check result');
+    panel.setAttribute('aria-label', 'PHP Simple Check');
 
     var head = el('div', 'panel-head');
     var panelEmoji = el('span', 'panel-emoji');
     var panelTitle = el('span', 'panel-title');
     var close = el('button', 'close', '×');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Close');
+    close.setAttribute('aria-label', t('overlay.close'));
     close.addEventListener('click', function () {
       hide();
       if (state.onClose) state.onClose();
@@ -953,9 +1754,9 @@
     var summary = el('p', 'summary');
     var list = el('ul', 'signals');
     var facts = el('dl', 'facts');
-    var note = el('p', 'note', 'Client-side checks only see signals. If PHP runs without leaving traces in the response, the result stays 🟢.');
+    var note = el('p', 'note', t('overlay.note'));
 
-    var siteDismiss = el('button', 'site-dismiss', 'Hide on this site');
+    var siteDismiss = el('button', 'site-dismiss', t('overlay.hide'));
     siteDismiss.type = 'button';
     siteDismiss.hidden = true;
     siteDismiss.addEventListener('click', function () {
@@ -972,7 +1773,7 @@
 
     var badge = el('button', 'badge');
     badge.type = 'button';
-    badge.title = 'Click for details';
+    badge.title = t('overlay.details');
     var badgeEmoji = el('span', 'badge-emoji');
     var badgeLabel = el('span', 'badge-label');
     badge.appendChild(badgeEmoji);
@@ -989,6 +1790,8 @@
     document.documentElement.appendChild(host);
 
     state.host = host;
+    wrap.setAttribute('dir', textDirection);
+
     state.refs = {
       shadow: shadow,
       wrap: wrap,
@@ -1016,7 +1819,7 @@
     var signals = result.signals || [];
     if (!signals.length) {
       var empty = el('li');
-      empty.appendChild(el('span', 'signal-label', 'No signals detected'));
+      empty.appendChild(el('span', 'signal-label', t('overlay.empty')));
       refs.list.appendChild(empty);
       return;
     }
@@ -1069,16 +1872,15 @@
     state.host.style.display = 'block';
 
     refs.badgeEmoji.textContent = result.emoji;
-    refs.badgeLabel.textContent = result.short || result.label;
+    refs.badgeLabel.textContent = translatedVerdict(result, '.short');
     refs.badge.style.borderColor = result.color;
-    refs.badge.setAttribute('aria-label', result.emoji + ' ' + result.label + ' (show details)');
+    refs.badge.setAttribute('aria-label', result.emoji + ' ' + translatedVerdict(result) + ' — ' + t('overlay.details'));
     refs.panelEmoji.textContent = result.emoji;
-    refs.panelTitle.textContent = result.label;
+    refs.panelTitle.textContent = translatedVerdict(result);
 
     var count = (result.signals || []).filter(function (signal) { return signal.weight > 0; }).length;
-    refs.summary.textContent =
-      'Score ' + result.score + ' · ' + count + ' PHP signal' + (count === 1 ? '' : 's') +
-      (result.confidence === 'high' ? ' · decisive signal' : '');
+    refs.summary.textContent = t('overlay.summary', { score: result.score, count: count }) +
+      (result.confidence === 'high' ? ' · ' + t('overlay.decisive') : '');
 
     renderSignals(refs, result);
     renderFacts(refs, result);
@@ -1130,6 +1932,8 @@
  */
 (function () {
   'use strict';
+
+  var t = PHPSimpleCheckI18n.t;
 
   var RECHECK_DELAYS = [2500, 6000];
   var HIDDEN_PREFIX = 'php-simple-check:hidden:';
@@ -1259,7 +2063,7 @@
         PHPSimpleCheckOverlay.render(result, {
           onSiteDismiss: function () {
             setHidden(true);
-            showToast('PHP Simple Check is hidden on this site', 'Undo', function () {
+            showToast(t('toast.hidden'), t('toast.undo'), function () {
               setHidden(false);
               PHPSimpleCheckOverlay.show();
               run();

@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "透過回應標頭、Cookie 與 DOM 判斷網站是否由 PHP 提供（🔴 PHP / 🟢 非 PHP）。"
+  }
+}

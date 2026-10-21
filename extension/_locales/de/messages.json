@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "Prüft Header, Cookies und DOM und zeigt, ob eine Seite mit PHP ausgeliefert wird (🔴 PHP / 🟢 kein PHP)."
+  }
+}

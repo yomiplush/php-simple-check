@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -17,7 +17,7 @@
       <section class="verdict verdict-unknown" id="verdict">
         <span class="verdict-emoji" id="verdict-emoji">⚪</span>
         <div class="verdict-body">
-          <p class="verdict-label" id="verdict-label">Checking…</p>
+          <p class="verdict-label" id="verdict-label" data-i18n="popup.notJudged">Not judged yet</p>
           <p class="verdict-meta" id="verdict-meta"></p>
         </div>
       </section>
@@ -25,12 +25,12 @@
       <p class="page-url" id="page-url"></p>
 
       <section class="block" id="signal-section" hidden>
-        <h2>Detected signals</h2>
+        <h2 data-i18n="popup.signals">Detected signals</h2>
         <ul class="signal-list" id="signal-list"></ul>
       </section>
 
       <section class="block" id="fact-section" hidden>
-        <h2>Observed values</h2>
+        <h2 data-i18n="popup.facts">Observed values</h2>
         <dl class="fact-list" id="fact-list"></dl>
       </section>
 
@@ -39,40 +39,42 @@
       </section>
 
       <div class="actions">
-        <button type="button" id="rescan" class="primary">Rescan</button>
+        <button type="button" id="rescan" class="primary" data-i18n="popup.rescan">Rescan</button>
         <label class="toggle">
           <input type="checkbox" id="overlay-toggle" />
-          <span>Show the page badge</span>
+          <span data-i18n="popup.overlay">Show the page badge</span>
         </label>
       </div>
 
-      <section class="block guard" id="guard-section">
-        <h2>Guard mode</h2>
+      <section class="block guard" id="guard-section" hidden>
+        <h2 data-i18n="popup.guard">Guard mode</h2>
         <label class="toggle guard-toggle">
           <input type="checkbox" id="guard-toggle" />
-          <span>Block sites that use PHP</span>
+          <span data-i18n="popup.guardToggle">Block sites that use PHP</span>
         </label>
-        <p class="guard-hint">
-          Detection happens after the page loads, so blocking applies from the <strong>next visit</strong>.
+        <p class="guard-hint" data-i18n="popup.guardHint">
+          Detection happens after the page loads, so blocking applies from the next visit.
         </p>
 
         <div class="guard-group" id="blocked-wrap" hidden>
-          <h3 id="blocked-title">Blocked</h3>
+          <h3 id="blocked-title" data-i18n="popup.blocked">Blocked</h3>
           <ul class="guard-list" id="blocked-list"></ul>
         </div>
         <div class="guard-group" id="allowed-wrap" hidden>
-          <h3>Allowed</h3>
+          <h3 data-i18n="popup.allowed">Allowed</h3>
           <ul class="guard-list" id="allowed-list"></ul>
         </div>
       </section>
 
-      <p class="note">
+      <p class="note" data-i18n="popup.note">
         Client-side checks only see signals. PHP running without traces in the response will show 🟢.
         Everything is processed on your device — nothing is sent anywhere.
       </p>
     </main>
 
     <script src="lib/detector.js"></script>
+    <script src="lib/i18n-data.js"></script>
+    <script src="lib/i18n.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

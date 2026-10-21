@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "يفحص ترويسات الاستجابة وملفات تعريف الارتباط وDOM لبيان ما إذا كان الموقع يعمل بـ PHP (🔴 PHP / 🟢 بدون PHP)."
+  }
+}

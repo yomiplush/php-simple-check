@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "レスポンスヘッダー・Cookie・DOM から、サイトが PHP で動いているかを判定します（🔴 PHP / 🟢 非 PHP）。"
+  }
+}

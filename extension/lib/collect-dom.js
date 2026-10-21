@@ -151,6 +151,33 @@
       .filter(Boolean);
   }
 
+  /**
+   * Reads the response headers of this document with one same-origin HEAD
+   * request. Running it from the content script (instead of the worker) means
+   * the extension needs no host permissions and no webRequest access: the
+   * request is indistinguishable from the page asking for its own headers.
+   */
+  function probeHeaders(url) {
+    return fetch(url || location.href, {
+      method: 'HEAD',
+      credentials: 'include',
+      cache: 'no-store',
+      redirect: 'follow'
+    })
+      .then(function (response) {
+        if (!response.ok) return null;
+        var headers = {};
+        response.headers.forEach(function (value, name) {
+          var key = name.toLowerCase();
+          (headers[key] = headers[key] || []).push(value);
+        });
+        return Object.keys(headers).length ? headers : null;
+      })
+      .catch(function () {
+        return null;
+      });
+  }
+
   function collect(options) {
     var settings = options || {};
     var inline = settings.includeInlineScripts === false ? '' : inlineScriptText();
@@ -176,5 +203,5 @@
     };
   }
 
-  global.PHPSimpleCheckDom = { collect: collect };
+  global.PHPSimpleCheckDom = { collect: collect, probeHeaders: probeHeaders };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

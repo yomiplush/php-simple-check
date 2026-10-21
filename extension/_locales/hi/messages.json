@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "रेस्पॉन्स हेडर, कुकी और DOM देखकर बताता है कि साइट PHP से चल रही है या नहीं (🔴 PHP / 🟢 PHP नहीं)।"
+  }
+}

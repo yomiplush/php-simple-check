@@ -16,6 +16,8 @@
 (function () {
   'use strict';
 
+  var t = PHPSimpleCheckI18n.t;
+
   var RECHECK_DELAYS = [2500, 6000];
   var HIDDEN_PREFIX = 'php-simple-check:hidden:';
 
@@ -144,7 +146,7 @@
         PHPSimpleCheckOverlay.render(result, {
           onSiteDismiss: function () {
             setHidden(true);
-            showToast('PHP Simple Check is hidden on this site', 'Undo', function () {
+            showToast(t('toast.hidden'), t('toast.undo'), function () {
               setHidden(false);
               PHPSimpleCheckOverlay.show();
               run();

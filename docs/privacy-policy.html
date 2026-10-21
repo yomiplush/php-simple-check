@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PHP Simple Check — Privacy Policy</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #111827;
+        --muted: #4b5563;
+        --line: #e5e7eb;
+        --bg: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #e6edf3;
+          --muted: #9ba7b4;
+          --line: #30363d;
+          --bg: #0d1117;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 40px 20px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 400 16px/1.7 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      main { max-width: 720px; margin: 0 auto; }
+      h1 { font-size: 28px; margin: 0 0 4px; }
+      h2 { font-size: 19px; margin: 32px 0 8px; }
+      p, li { margin: 0 0 10px; }
+      ul { padding-left: 22px; }
+      .meta { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+      .summary {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin: 0 0 8px;
+      }
+      .summary strong { display: block; margin-bottom: 4px; }
+      code {
+        font: 500 14px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: color-mix(in srgb, var(--fg) 8%, transparent);
+        padding: 1px 5px;
+        border-radius: 5px;
+      }
+      footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PHP Simple Check — Privacy Policy</h1>
+      <p class="meta">Effective date: 2026-10-21 · Applies to the Chrome extension and the userscripts.</p>
+
+      <p class="summary">
+        <strong>Short version</strong>
+        PHP Simple Check does not collect, store, sell or transmit any personal data. All detection runs
+        on your device. The only network request it makes is a <code>HEAD</code> request to the page you
+        already opened, to read that page's own response headers. There are no servers, no analytics and
+        no third parties.
+      </p>
+
+      <h2>1. What the extension does</h2>
+      <p>
+        When you open a page, PHP Simple Check inspects signals that are already available to that page —
+        response headers, cookies the page's own JavaScript can read, URLs, and markup — and shows a
+        verdict: 🔴 PHP usage detected, 🟡 possibly PHP, or 🟢 no PHP signals. The verdict is displayed in
+        the browser toolbar, optionally as a badge on the page, and in the extension's popup.
+      </p>
+
+      <h2>2. Data we collect</h2>
+      <p>
+        <strong>None.</strong> The extension has no server component. No browsing history, page content,
+        URLs, cookies or identifiers are sent to the developer or to any third party. There is no
+        analytics, telemetry, advertising or crash reporting.
+      </p>
+
+      <h2>3. Data stored on your device</h2>
+      <ul>
+        <li>
+          <strong>Settings</strong> (<code>chrome.storage.local</code>): whether the on-page badge is
+          shown, sites you chose to hide it on, and — in the full sideloaded build only — the guard-mode
+          host lists.
+        </li>
+        <li>
+          <strong>Per-tab verdicts</strong> (<code>chrome.storage.session</code>): the latest result for
+          each open tab, so the popup can show it. Session storage is cleared when the browser exits.
+        </li>
+        <li>
+          <strong>Per-site preference</strong> (userscript only): a flag in that site's
+          <code>localStorage</code> when you press "Hide on this site".
+        </li>
+      </ul>
+      <p>This data never leaves your device and is not readable by the developer.</p>
+
+      <h2>4. Network activity</h2>
+      <p>
+        To read the response headers of the page you opened, the extension issues one
+        <code>HEAD</code> request to that same URL from the page's own origin. This is the only request it
+        makes. It goes directly to the site you are already visiting, exactly like the page loading
+        itself; the developer never sees it. Sites that reject <code>HEAD</code> are judged from the
+        remaining signals.
+      </p>
+
+      <h2>5. Cookies</h2>
+      <ul>
+        <li>
+          <strong>Store build</strong> (the version distributed through the Chrome Web Store): requests
+          only the <code>storage</code> permission. It uses no cookie API; it only sees cookies that the
+          page's own JavaScript can read.
+        </li>
+        <li>
+          <strong>Full build</strong> (sideloaded from GitHub): additionally reads the <em>names</em> of
+          cookies for the current tab (for example <code>PHPSESSID</code>) to detect PHP sessions. Only
+          cookie names are inspected; values are never stored, logged or transmitted.
+        </li>
+      </ul>
+
+      <h2>6. Permissions</h2>
+      <p>
+        The store build declares a single permission, <code>storage</code>, used for the settings listed
+        above. Its content script runs on http(s) pages so that it can read the page's own markup and
+        request its headers; this access is inherent to showing a page-level verdict and is not used to
+        collect data.
+      </p>
+
+      <h2>7. Third parties</h2>
+      <p>
+        None. The extension bundles all of its code and loads nothing at runtime — no remote scripts, no
+        fonts, no images, no CDNs.
+      </p>
+
+      <h2>8. Children</h2>
+      <p>The extension is a developer utility and is not directed at children under 13.</p>
+
+      <h2>9. Changes</h2>
+      <p>
+        If this policy changes, the effective date above is updated and the change is published in the
+        project repository: <code>docs/privacy-policy.html</code>.
+      </p>
+
+      <h2>10. Contact</h2>
+      <p>
+        Questions or requests:
+        <a href="https://github.com/yomiplush/php-simple-check/issues">github.com/yomiplush/php-simple-check/issues</a>.
+      </p>
+
+      <h2 lang="ja">日本語要約</h2>
+      <p lang="ja">
+        本拡張機能は個人情報を収集・保存・販売・送信しません。判定はすべて端末内で完結します。通信は、
+        開いたページ自身への <code>HEAD</code> リクエスト 1 回（レスポンスヘッダーの取得）のみです。
+        設定は <code>storage</code> に、タブごとの判定結果はセッションストレージに保存され、ブラウザ終了時に消えます。
+        ストア版の権限は <code>storage</code> のみで、Cookie API は使用しません。
+      </p>
+
+      <footer>
+        PHP Simple Check · MIT License · <a href="https://github.com/yomiplush/php-simple-check">source</a>
+      </footer>
+    </main>
+  </body>
+</html>

@@ -8,6 +8,9 @@
 (function (global) {
   'use strict';
 
+  var t = global.PHPSimpleCheckI18n.t;
+  var textDirection = global.PHPSimpleCheckI18n.dir;
+
   var HOST_ID = 'php-simple-check-badge';
   var CSS = [
     ':host{all:initial}',
@@ -110,22 +113,25 @@
     bar.setAttribute('role', 'alert');
     bar.appendChild(el('span', 'icon', '⚠'));
 
+    // Keep the host visually distinct while letting each language put it
+    // wherever its grammar needs it.
+    var template = t('banner.text', { host: '\u0000host\u0000' });
+    var segments = template.split('\u0000host\u0000');
     var text = el('span', 'text');
-    text.appendChild(el('span', 'host', settings.host || 'This site'));
-    text.appendChild(
-      el('span', null, ' looks like it runs PHP. Guard mode will block it on the next visit.')
-    );
+    text.appendChild(el('span', null, segments[0]));
+    text.appendChild(el('span', 'host', settings.host || ''));
+    if (segments[1]) text.appendChild(el('span', null, segments[1]));
 
     var actions = el('span', 'actions');
 
-    var allow = el('button', 'allow', 'Allow');
+    var allow = el('button', 'allow', t('banner.allow'));
     allow.type = 'button';
     allow.addEventListener('click', function () {
       hideGuardBanner();
       if (banner.onAllow) banner.onAllow();
     });
 
-    var leave = el('button', null, 'Leave');
+    var leave = el('button', null, t('banner.leave'));
     leave.type = 'button';
     leave.addEventListener('click', function () {
       if (banner.onLeave) banner.onLeave();
@@ -134,13 +140,14 @@
 
     var close = el('button', null, '×');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Close');
+    close.setAttribute('aria-label', t('overlay.close'));
     close.addEventListener('click', hideGuardBanner);
 
     actions.appendChild(allow);
     actions.appendChild(leave);
     actions.appendChild(close);
 
+    bar.setAttribute('dir', textDirection);
     bar.appendChild(text);
     bar.appendChild(actions);
     shadow.appendChild(style);
@@ -160,6 +167,13 @@
     onClose: null,
     onSiteDismiss: null
   };
+
+  function translatedVerdict(result, suffix) {
+    var key = 'verdict.' + result.verdict + (suffix || '');
+    var value = t(key);
+    if (value === key) return suffix ? result.short || result.label : result.label;
+    return value;
+  }
 
   function el(tag, className, text) {
     var node = document.createElement(tag);
@@ -195,14 +209,14 @@
     var panel = el('section', 'panel');
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'PHP Simple Check result');
+    panel.setAttribute('aria-label', 'PHP Simple Check');
 
     var head = el('div', 'panel-head');
     var panelEmoji = el('span', 'panel-emoji');
     var panelTitle = el('span', 'panel-title');
     var close = el('button', 'close', '×');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Close');
+    close.setAttribute('aria-label', t('overlay.close'));
     close.addEventListener('click', function () {
       hide();
       if (state.onClose) state.onClose();
@@ -214,9 +228,9 @@
     var summary = el('p', 'summary');
     var list = el('ul', 'signals');
     var facts = el('dl', 'facts');
-    var note = el('p', 'note', 'Client-side checks only see signals. If PHP runs without leaving traces in the response, the result stays 🟢.');
+    var note = el('p', 'note', t('overlay.note'));
 
-    var siteDismiss = el('button', 'site-dismiss', 'Hide on this site');
+    var siteDismiss = el('button', 'site-dismiss', t('overlay.hide'));
     siteDismiss.type = 'button';
     siteDismiss.hidden = true;
     siteDismiss.addEventListener('click', function () {
@@ -233,7 +247,7 @@
 
     var badge = el('button', 'badge');
     badge.type = 'button';
-    badge.title = 'Click for details';
+    badge.title = t('overlay.details');
     var badgeEmoji = el('span', 'badge-emoji');
     var badgeLabel = el('span', 'badge-label');
     badge.appendChild(badgeEmoji);
@@ -250,6 +264,8 @@
     document.documentElement.appendChild(host);
 
     state.host = host;
+    wrap.setAttribute('dir', textDirection);
+
     state.refs = {
       shadow: shadow,
       wrap: wrap,
@@ -277,7 +293,7 @@
     var signals = result.signals || [];
     if (!signals.length) {
       var empty = el('li');
-      empty.appendChild(el('span', 'signal-label', 'No signals detected'));
+      empty.appendChild(el('span', 'signal-label', t('overlay.empty')));
       refs.list.appendChild(empty);
       return;
     }
@@ -330,16 +346,15 @@
     state.host.style.display = 'block';
 
     refs.badgeEmoji.textContent = result.emoji;
-    refs.badgeLabel.textContent = result.short || result.label;
+    refs.badgeLabel.textContent = translatedVerdict(result, '.short');
     refs.badge.style.borderColor = result.color;
-    refs.badge.setAttribute('aria-label', result.emoji + ' ' + result.label + ' (show details)');
+    refs.badge.setAttribute('aria-label', result.emoji + ' ' + translatedVerdict(result) + ' — ' + t('overlay.details'));
     refs.panelEmoji.textContent = result.emoji;
-    refs.panelTitle.textContent = result.label;
+    refs.panelTitle.textContent = translatedVerdict(result);
 
     var count = (result.signals || []).filter(function (signal) { return signal.weight > 0; }).length;
-    refs.summary.textContent =
-      'Score ' + result.score + ' · ' + count + ' PHP signal' + (count === 1 ? '' : 's') +
-      (result.confidence === 'high' ? ' · decisive signal' : '');
+    refs.summary.textContent = t('overlay.summary', { score: result.score, count: count }) +
+      (result.confidence === 'high' ? ' · ' + t('overlay.decisive') : '');
 
     renderSignals(refs, result);
     renderFacts(refs, result);

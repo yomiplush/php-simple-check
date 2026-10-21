@@ -35,7 +35,8 @@ jobs:
             echo
             echo "| File | Platform |"
             echo "| --- | --- |"
-            echo "| php-simple-check-extension-${GITHUB_REF_NAME}.zip | Chrome, Edge, Brave — unzip, then Load unpacked |"
+            echo "| php-simple-check-extension-${GITHUB_REF_NAME}.zip | Chrome, Edge, Brave — unzip, then Load unpacked (full build) |"
+            echo "| php-simple-check-store-${GITHUB_REF_NAME}.zip | Chrome Web Store upload (permissions: storage only) |"
             echo "| php-simple-check-ios.user.js | Safari on iOS / iPadOS / macOS (Userscripts app) |"
             echo "| php-simple-check-android.user.js | Firefox for Android (Tampermonkey) |"
             echo "| php-simple-check.user.js | Generic userscript copy |"
@@ -57,6 +58,7 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" \
             "dist/php-simple-check-extension-v${GITHUB_REF_NAME#v}.zip" \
+            "dist/php-simple-check-store-v${GITHUB_REF_NAME#v}.zip" \
             "dist/php-simple-check.user.js" \
             "dist/php-simple-check-ios.user.js" \
             "dist/php-simple-check-android.user.js" \

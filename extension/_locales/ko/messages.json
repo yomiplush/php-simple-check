@@ -1,0 +1,8 @@
+{
+  "extName": {
+    "message": "PHP Simple Check"
+  },
+  "extDescription": {
+    "message": "응답 헤더, 쿠키, DOM을 확인해 사이트가 PHP로 제공되는지 판정합니다 (🔴 PHP / 🟢 PHP 없음)."
+  }
+}

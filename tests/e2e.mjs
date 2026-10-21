@@ -84,11 +84,27 @@ const ROUTES = new Map([
   ['/wp-content/themes/demo/style.css', { headers: { 'content-type': 'text/css' }, body: 'body{}' }]
 ]);
 
+// EXPECT_LOCALE=ja (with LANG=ja_JP.UTF-8) makes the run assert the localized UI.
+const UI_LOCALE = process.env.EXPECT_LOCALE || 'en';
+const uiStrings = await readJson(path.join(ROOT, `locales/${UI_LOCALE}.json`));
+const EMOJI = { php: '🔴', maybe: '🟡', none: '🟢' };
+
+function verdictCase(verdict, path, actionBadge) {
+  return {
+    path,
+    verdict,
+    emoji: EMOJI[verdict],
+    badgeLabel: uiStrings[`verdict.${verdict}.short`],
+    panelTitle: uiStrings[`verdict.${verdict}`],
+    actionBadge
+  };
+}
+
 const CASES = [
-  { path: '/static/', verdict: 'none', emoji: '🟢', badgeLabel: 'No PHP', actionBadge: 'OK', panelTitle: 'No PHP signals found' },
-  { path: '/legacy/', verdict: 'maybe', emoji: '🟡', badgeLabel: 'Likely PHP', actionBadge: '?', panelTitle: 'Possibly PHP (weak signals only)' },
-  { path: '/php/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP detected', actionBadge: 'PHP', panelTitle: 'PHP usage detected' },
-  { path: '/header-only/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP detected', actionBadge: 'PHP', panelTitle: 'PHP usage detected' }
+  verdictCase('none', '/static/', 'OK'),
+  verdictCase('maybe', '/legacy/', '?'),
+  verdictCase('php', '/php/', 'PHP'),
+  verdictCase('php', '/header-only/', 'PHP')
 ];
 
 function log(message) {
@@ -229,7 +245,9 @@ async function main() {
 
     // Chrome ships component extensions with their own service workers, so the
     // target has to be identified by its manifest name rather than its URL.
-    const extensionName = await readJson(path.join(EXTENSION_DIR, 'manifest.json')).then((m) => m.name);
+    const english = await readJson(path.join(ROOT, 'locales/en.json'));
+    const extensionName = english.extName;
+    if (UI_LOCALE !== 'en') log(`UI locale: ${UI_LOCALE}`);
     const worker = await waitFor(
       'extension service worker',
       async () => {
@@ -255,6 +273,32 @@ async function main() {
     });
     const workerSession = worker.sessionId;
     log(`extension service worker is running (${worker.url.split('/')[2]})`);
+
+    const capabilities = await evaluate(
+      workerSession,
+      `({
+         guard: Boolean(chrome.declarativeNetRequest),
+         cookies: Boolean(chrome.cookies),
+         permissions: chrome.runtime.getManifest().permissions,
+         hostPermissions: chrome.runtime.getManifest().host_permissions || []
+       })`
+    );
+    log(
+      `capabilities: ${JSON.stringify(capabilities.permissions)}` +
+      ` guard=${capabilities.guard} cookies=${capabilities.cookies}`
+    );
+
+    if (process.env.EXPECT_MINIMAL === '1') {
+      const minimalProblems = [];
+      if (JSON.stringify(capabilities.permissions) !== JSON.stringify(['storage'])) {
+        minimalProblems.push(`permissions ${JSON.stringify(capabilities.permissions)}`);
+      }
+      if (capabilities.hostPermissions.length) minimalProblems.push('host permissions present');
+      if (capabilities.guard) minimalProblems.push('guard capability present');
+      if (capabilities.cookies) minimalProblems.push('cookies capability present');
+      if (minimalProblems.length) fail(`minimal build: ${minimalProblems.join(', ')}`);
+      else log('✔ minimal build: permissions are exactly ["storage"], no host access');
+    }
 
     // Cookies are per-host, not per-document: clear them so each fixture is
     // judged on its own evidence.
@@ -395,7 +439,7 @@ async function main() {
       'overlay to turn green after navigating /header-only/ → /static/',
       async () => {
         const value = await readOverlay();
-        return value && value.badgeLabel === 'No PHP' ? value : null;
+        return value && value.badgeLabel === uiStrings['verdict.none.short'] ? value : null;
       },
       15000
     ).catch(() => null);
@@ -428,6 +472,15 @@ async function main() {
         return state && state.ready === 'complete' && state.href === url ? state : null;
       });
 
+      // The extension content script may already have created its own host;
+      // remove it so the userscript's badge is the one under test.
+      await evaluate(
+        sessionId,
+        `Array.prototype.forEach.call(
+           document.querySelectorAll('#php-simple-check-badge, #php-simple-check-banner'),
+           function (node) { node.remove(); }
+         )`
+      );
       await evaluate(sessionId, userscript);
 
       const overlay = await waitFor(
@@ -482,6 +535,15 @@ async function main() {
         return state && state.ready === 'complete' && state.w === 390 ? state : null;
       });
 
+      // The extension content script may already have created its own host;
+      // remove it so the userscript's badge is the one under test.
+      await evaluate(
+        sessionId,
+        `Array.prototype.forEach.call(
+           document.querySelectorAll('#php-simple-check-badge, #php-simple-check-banner'),
+           function (node) { node.remove(); }
+         )`
+      );
       await evaluate(sessionId, userscript);
       await waitFor('mobile overlay', async () => {
         const value = await evaluate(sessionId, `document.getElementById('php-simple-check-badge') ? true : null`);
@@ -580,7 +642,9 @@ async function main() {
     }
 
     // ---- guard mode: block a flagged host on the next navigation -----------
-    {
+    if (!capabilities.guard) {
+      log('· guard mode is not part of this build — skipping the blocking checks');
+    } else {
       const enabled = await evaluate(
         workerSession,
         `chrome.storage.local.set({ guardEnabled: true, blockedHosts: {}, allowedHosts: [] })

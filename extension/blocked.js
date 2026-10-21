@@ -8,12 +8,22 @@
 'use strict';
 
 (function () {
+  var i18n = globalThis.PHPSimpleCheckI18n;
+  var t = i18n.t;
   var params = new URLSearchParams(location.search);
   var host = params.get('host') || '';
   var fallbackUrl = host ? 'https://' + host + '/' : 'about:blank';
 
   function $(id) {
     return document.getElementById(id);
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = i18n.locale;
+    document.documentElement.dir = i18n.dir;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (node) {
+      node.textContent = t(node.getAttribute('data-i18n'));
+    });
   }
 
   function el(tag, className, text) {
@@ -33,15 +43,14 @@
 
   function renderDetails(entry) {
     if (!entry) {
-      $('note').textContent =
-        'No record for this host was found (it may already have been removed). “Allow and open” still continues the load.';
+      $('note').textContent = t('blocked.missing');
       return;
     }
 
     $('facts').hidden = false;
     $('score').textContent = String(entry.score);
     if (entry.at) {
-      $('checked').textContent = new Date(entry.at).toLocaleString();
+      $('checked').textContent = new Date(entry.at).toLocaleString(i18n.locale);
     }
 
     var signals = Array.isArray(entry.signals) ? entry.signals : [];
@@ -78,7 +87,8 @@
   }
 
   async function init() {
-    $('host').textContent = host || '(unknown host)';
+    applyTranslations();
+    $('host').textContent = host || t('blocked.unknown');
     if (!host) {
       $('allow').disabled = true;
     }

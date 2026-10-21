@@ -13,6 +13,7 @@
   const RECHECK_DELAYS = [2500, 6000];
 
   let overlayEnabled = true;
+  const headerCache = new Map();
   let lastResult = null;
   let lastHref = location.href;
   let pollTimer = null;
@@ -75,6 +76,12 @@
     }
     lastHref = payload.url;
 
+    // One HEAD request per document: the only network activity of the extension.
+    if (!headerCache.has(payload.url)) {
+      headerCache.set(payload.url, PHPSimpleCheckDom.probeHeaders(payload.url));
+    }
+    payload.headers = await headerCache.get(payload.url);
+
     const response = await send({ type: MESSAGE_DOM, payload: payload });
     if (response && response.result) render(response.result);
   }
@@ -118,6 +125,7 @@
     pollTimer = setInterval(function () {
       if (location.href === lastHref) return;
       lastHref = location.href;
+      headerCache.clear();
       setTimeout(function () { void scan(); }, 800);
     }, 1200);
     window.addEventListener('popstate', function () { setTimeout(function () { void scan(); }, 500); });

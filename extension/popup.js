@@ -9,9 +9,27 @@
 
 (function () {
   var VERDICT_CLASS = { php: 'verdict-php', maybe: 'verdict-maybe', none: 'verdict-none' };
+  var i18n = globalThis.PHPSimpleCheckI18n;
+  var t = i18n.t;
+
+  function verdictText(result, suffix) {
+    var key = 'verdict.' + result.verdict + (suffix || '');
+    var value = t(key);
+    if (value === key) return suffix ? result.short || result.label : result.label;
+    return value;
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = i18n.locale;
+    document.documentElement.dir = i18n.dir;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (node) {
+      node.textContent = t(node.getAttribute('data-i18n'));
+    });
+  }
 
   var els = {};
   var activeTabId = null;
+  var capabilities = { guard: true };
 
   function $(id) {
     return document.getElementById(id);
@@ -27,7 +45,7 @@
 
   function setBusy(busy) {
     els.rescan.disabled = busy;
-    els.rescan.textContent = busy ? 'Scanning…' : 'Rescan';
+    els.rescan.textContent = t(busy ? 'popup.scanning' : 'popup.rescan');
   }
 
   function el(tag, className, text) {
@@ -46,19 +64,20 @@
     var verdict = result && result.verdict;
     els.verdict.className = 'verdict ' + (VERDICT_CLASS[verdict] || 'verdict-unknown');
     els.verdictEmoji.textContent = result ? result.emoji : '⚪';
-    els.verdictLabel.textContent = result ? result.label : 'Not judged yet';
+    els.verdictLabel.textContent = result ? verdictText(result) : t('popup.notJudged');
 
     if (!result) {
-      els.verdictMeta.textContent = 'Reload the page or press Rescan';
+      els.verdictMeta.textContent = t('popup.reload');
       return;
     }
 
     var positives = result.signals.filter(function (signal) { return signal.weight > 0; }).length;
     var checked = new Date(result.checkedAt);
-    els.verdictMeta.textContent =
-      'Score ' + result.score +
-      ' · ' + positives + ' signal' + (positives === 1 ? '' : 's') +
-      ' · ' + checked.toLocaleTimeString();
+    els.verdictMeta.textContent = t('popup.meta', {
+      score: result.score,
+      count: positives,
+      time: checked.toLocaleTimeString()
+    });
   }
 
   function renderSignals(result) {
@@ -119,14 +138,15 @@
 
     var guardEnabled = Boolean(guard && guard.enabled);
     els.guardToggle.checked = guardEnabled;
-    els.blockedTitle.textContent = guardEnabled ? 'Blocked' : 'Recorded (guard mode off)';
+    els.blockedTitle.textContent = t(guardEnabled ? 'popup.blocked' : 'popup.recorded');
+    els.guardSection.hidden = !capabilities.guard;
     els.blockedWrap.hidden = blockedHosts.length === 0;
     els.allowedWrap.hidden = allowed.length === 0;
 
     els.blockedList.textContent = '';
     blockedHosts.forEach(function (host) {
       els.blockedList.appendChild(
-        guardRow(host, 'Remove', function () {
+        guardRow(host, t('popup.remove'), function () {
           return send({ type: 'php-simple-check:unblock-host', host: host });
         })
       );
@@ -135,7 +155,7 @@
     els.allowedList.textContent = '';
     allowed.slice().sort().forEach(function (host) {
       els.allowedList.appendChild(
-        guardRow(host, 'Block again', function () {
+        guardRow(host, t('popup.blockAgain'), function () {
           return send({ type: 'php-simple-check:unallow-host', host: host });
         })
       );
@@ -162,7 +182,7 @@
       render(response.result);
       renderEmpty('');
     } else {
-      renderEmpty('This page could not be judged. Reload it and try again.');
+      renderEmpty(t('popup.failed'));
     }
   }
 
@@ -181,6 +201,7 @@
     els.emptyText = $('empty-text');
     els.rescan = $('rescan');
     els.overlayToggle = $('overlay-toggle');
+    els.guardSection = $('guard-section');
     els.guardToggle = $('guard-toggle');
     els.blockedWrap = $('blocked-wrap');
     els.blockedTitle = $('blocked-title');
@@ -188,6 +209,7 @@
     els.allowedWrap = $('allowed-wrap');
     els.allowedList = $('allowed-list');
 
+    applyTranslations();
     els.version.textContent = 'v' + PHPSimpleCheck.version;
 
     try {
@@ -212,13 +234,15 @@
     });
 
     var guardResponse = await send({ type: 'php-simple-check:get-guard' });
+    capabilities = (guardResponse && guardResponse.capabilities) || { guard: true };
+    els.guardSection.hidden = !capabilities.guard;
     renderGuard(guardResponse && guardResponse.guard ? guardResponse.guard : null);
 
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs && tabs[0];
     if (!tab || tab.id == null) {
       render(null);
-      renderEmpty('No active tab found.');
+      renderEmpty(t('popup.noTab'));
       els.rescan.disabled = true;
       return;
     }
@@ -228,7 +252,7 @@
 
     if (!/^https?:/i.test(tab.url || '')) {
       render(null);
-      renderEmpty('This page cannot be judged (chrome:// pages, the Web Store, etc. are out of scope).');
+      renderEmpty(t('popup.unsupported'));
       els.rescan.disabled = true;
       return;
     }
@@ -240,7 +264,7 @@
     }
 
     render(null);
-    renderEmpty('No verdict yet — scanning automatically.');
+    renderEmpty(t('popup.noVerdict'));
     void rescan();
   }
 

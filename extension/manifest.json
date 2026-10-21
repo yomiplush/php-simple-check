@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "PHP Simple Check",
+  "name": "__MSG_extName__",
   "short_name": "PHP Check",
-  "version": "1.4.0",
-  "description": "Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP).",
+  "version": "2.0.0",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "minimum_chrome_version": "111",
   "permissions": [
-    "webRequest",
     "cookies",
     "storage",
     "declarativeNetRequest"
@@ -42,6 +42,8 @@
       ],
       "js": [
         "lib/detector.js",
+        "lib/i18n-data.js",
+        "lib/i18n.js",
         "lib/collect-dom.js",
         "lib/overlay.js",
         "content.js"
