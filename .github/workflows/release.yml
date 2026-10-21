@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -20,6 +22,35 @@ jobs:
         run: npm test
       - name: Build artifacts
         run: npm run build
+      - name: Assemble release notes
+        run: |
+          PREV="$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)"
+          {
+            echo "PHP Simple Check ${GITHUB_REF_NAME#v}"
+            echo
+            echo "An extension and userscripts that report whether a site is served by PHP:"
+            echo "🔴 PHP detected · 🟡 likely PHP · 🟢 no PHP signals."
+            echo
+            echo "## Downloads"
+            echo
+            echo "| File | Platform |"
+            echo "| --- | --- |"
+            echo "| php-simple-check-extension-${GITHUB_REF_NAME}.zip | Chrome, Edge, Brave — unzip, then Load unpacked |"
+            echo "| php-simple-check-ios.user.js | Safari on iOS / iPadOS / macOS (Userscripts app) |"
+            echo "| php-simple-check-android.user.js | Firefox for Android (Tampermonkey) |"
+            echo "| php-simple-check.user.js | Generic userscript copy |"
+            echo
+            echo "Install steps and the full signal list are in the [README](https://github.com/${GITHUB_REPOSITORY}#install)."
+            echo
+            echo "## Changes"
+            echo
+            if [ -n "$PREV" ]; then
+              git log --pretty='- %s' "$PREV..$GITHUB_REF_NAME"
+            else
+              git log --pretty='- %s' "$GITHUB_REF_NAME"
+            fi
+          } > release-notes.md
+          cat release-notes.md
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,5 +60,5 @@ jobs:
             "dist/php-simple-check.user.js" \
             "dist/php-simple-check-ios.user.js" \
             "dist/php-simple-check-android.user.js" \
-            --title "PHP Simple Check $GITHUB_REF_NAME" \
-            --generate-notes
+            --title "PHP Simple Check v${GITHUB_REF_NAME#v}" \
+            --notes-file release-notes.md

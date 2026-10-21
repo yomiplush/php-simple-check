@@ -9,7 +9,7 @@
  * document, so we make one extra same-origin HEAD request for them.
  *
  * Mobile extras:
- *   - "このサイトでは表示しない" is remembered per hostname in localStorage
+ *   - "Hide on this site" is remembered per hostname in localStorage
  *     (with an undo toast), because on a phone there is no other way to get the
  *     badge out of the way.
  */
@@ -144,7 +144,7 @@
         PHPSimpleCheckOverlay.render(result, {
           onSiteDismiss: function () {
             setHidden(true);
-            showToast('このサイトではバッジを表示しません', '元に戻す', function () {
+            showToast('PHP Simple Check is hidden on this site', 'Undo', function () {
               setHidden(false);
               PHPSimpleCheckOverlay.show();
               run();

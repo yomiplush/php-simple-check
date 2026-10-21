@@ -17,7 +17,7 @@
       <section class="verdict verdict-unknown" id="verdict">
         <span class="verdict-emoji" id="verdict-emoji">⚪</span>
         <div class="verdict-body">
-          <p class="verdict-label" id="verdict-label">判定中…</p>
+          <p class="verdict-label" id="verdict-label">Checking…</p>
           <p class="verdict-meta" id="verdict-meta"></p>
         </div>
       </section>
@@ -25,12 +25,12 @@
       <p class="page-url" id="page-url"></p>
 
       <section class="block" id="signal-section" hidden>
-        <h2>検出したシグナル</h2>
+        <h2>Detected signals</h2>
         <ul class="signal-list" id="signal-list"></ul>
       </section>
 
       <section class="block" id="fact-section" hidden>
-        <h2>確認できた値</h2>
+        <h2>Observed values</h2>
         <dl class="fact-list" id="fact-list"></dl>
       </section>
 
@@ -39,36 +39,36 @@
       </section>
 
       <div class="actions">
-        <button type="button" id="rescan" class="primary">再スキャン</button>
+        <button type="button" id="rescan" class="primary">Rescan</button>
         <label class="toggle">
           <input type="checkbox" id="overlay-toggle" />
-          <span>ページ上にバッジを表示</span>
+          <span>Show the page badge</span>
         </label>
       </div>
 
       <section class="block guard" id="guard-section">
-        <h2>警戒モード</h2>
+        <h2>Guard mode</h2>
         <label class="toggle guard-toggle">
           <input type="checkbox" id="guard-toggle" />
-          <span>PHP を検出したサイトをブロック</span>
+          <span>Block sites that use PHP</span>
         </label>
         <p class="guard-hint">
-          判定はページ読み込み後に行うため、ブロックは<strong>次回以降</strong>のアクセスに適用されます。
+          Detection happens after the page loads, so blocking applies from the <strong>next visit</strong>.
         </p>
 
         <div class="guard-group" id="blocked-wrap" hidden>
-          <h3 id="blocked-title">ブロック中</h3>
+          <h3 id="blocked-title">Blocked</h3>
           <ul class="guard-list" id="blocked-list"></ul>
         </div>
         <div class="guard-group" id="allowed-wrap" hidden>
-          <h3>許可済み</h3>
+          <h3>Allowed</h3>
           <ul class="guard-list" id="allowed-list"></ul>
         </div>
       </section>
 
       <p class="note">
-        クライアント側で観測できるのは「兆候」だけです。PHP が動いていても応答に痕跡が出ない構成では 🟢 になります。
-        判定結果は端末内でのみ処理され、外部へ送信しません。
+        Client-side checks only see signals. PHP running without traces in the response will show 🟢.
+        Everything is processed on your device — nothing is sent anywhere.
       </p>
     </main>
 

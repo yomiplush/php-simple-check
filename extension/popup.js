@@ -27,7 +27,7 @@
 
   function setBusy(busy) {
     els.rescan.disabled = busy;
-    els.rescan.textContent = busy ? 'スキャン中…' : '再スキャン';
+    els.rescan.textContent = busy ? 'Scanning…' : 'Rescan';
   }
 
   function el(tag, className, text) {
@@ -46,19 +46,19 @@
     var verdict = result && result.verdict;
     els.verdict.className = 'verdict ' + (VERDICT_CLASS[verdict] || 'verdict-unknown');
     els.verdictEmoji.textContent = result ? result.emoji : '⚪';
-    els.verdictLabel.textContent = result ? result.label : 'まだ判定していません';
+    els.verdictLabel.textContent = result ? result.label : 'Not judged yet';
 
     if (!result) {
-      els.verdictMeta.textContent = '再読み込みするか「再スキャン」を押してください';
+      els.verdictMeta.textContent = 'Reload the page or press Rescan';
       return;
     }
 
     var positives = result.signals.filter(function (signal) { return signal.weight > 0; }).length;
     var checked = new Date(result.checkedAt);
     els.verdictMeta.textContent =
-      'スコア ' + result.score +
-      ' ・ 手がかり ' + positives + ' 件' +
-      ' ・ ' + checked.toLocaleTimeString('ja-JP');
+      'Score ' + result.score +
+      ' · ' + positives + ' signal' + (positives === 1 ? '' : 's') +
+      ' · ' + checked.toLocaleTimeString();
   }
 
   function renderSignals(result) {
@@ -119,14 +119,14 @@
 
     var guardEnabled = Boolean(guard && guard.enabled);
     els.guardToggle.checked = guardEnabled;
-    els.blockedTitle.textContent = guardEnabled ? 'ブロック中' : '記録済み（警戒モード OFF）';
+    els.blockedTitle.textContent = guardEnabled ? 'Blocked' : 'Recorded (guard mode off)';
     els.blockedWrap.hidden = blockedHosts.length === 0;
     els.allowedWrap.hidden = allowed.length === 0;
 
     els.blockedList.textContent = '';
     blockedHosts.forEach(function (host) {
       els.blockedList.appendChild(
-        guardRow(host, '解除', function () {
+        guardRow(host, 'Remove', function () {
           return send({ type: 'php-simple-check:unblock-host', host: host });
         })
       );
@@ -135,7 +135,7 @@
     els.allowedList.textContent = '';
     allowed.slice().sort().forEach(function (host) {
       els.allowedList.appendChild(
-        guardRow(host, 'ブロックに戻す', function () {
+        guardRow(host, 'Block again', function () {
           return send({ type: 'php-simple-check:unallow-host', host: host });
         })
       );
@@ -162,7 +162,7 @@
       render(response.result);
       renderEmpty('');
     } else {
-      renderEmpty('このページでは判定できませんでした。再読み込みしてから試してください。');
+      renderEmpty('This page could not be judged. Reload it and try again.');
     }
   }
 
@@ -218,7 +218,7 @@
     var tab = tabs && tabs[0];
     if (!tab || tab.id == null) {
       render(null);
-      renderEmpty('アクティブなタブが見つかりません。');
+      renderEmpty('No active tab found.');
       els.rescan.disabled = true;
       return;
     }
@@ -228,7 +228,7 @@
 
     if (!/^https?:/i.test(tab.url || '')) {
       render(null);
-      renderEmpty('このページでは判定できません（chrome:// や Web Store などは対象外です）。');
+      renderEmpty('This page cannot be judged (chrome:// pages, the Web Store, etc. are out of scope).');
       els.rescan.disabled = true;
       return;
     }
@@ -240,7 +240,7 @@
     }
 
     render(null);
-    renderEmpty('判定結果がまだありません。自動で再スキャンします。');
+    renderEmpty('No verdict yet — scanning automatically.');
     void rescan();
   }
 

@@ -85,10 +85,10 @@ const ROUTES = new Map([
 ]);
 
 const CASES = [
-  { path: '/static/', verdict: 'none', emoji: '🟢', badgeLabel: 'PHP 非検出', actionBadge: 'OK', panelTitle: 'PHP の兆候なし' },
-  { path: '/legacy/', verdict: 'maybe', emoji: '🟡', badgeLabel: '要確認', actionBadge: '?', panelTitle: 'PHP の可能性あり（弱い兆候のみ）' },
-  { path: '/php/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP 検出', actionBadge: 'PHP', panelTitle: 'PHP 使用の兆候あり' },
-  { path: '/header-only/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP 検出', actionBadge: 'PHP', panelTitle: 'PHP 使用の兆候あり' }
+  { path: '/static/', verdict: 'none', emoji: '🟢', badgeLabel: 'No PHP', actionBadge: 'OK', panelTitle: 'No PHP signals found' },
+  { path: '/legacy/', verdict: 'maybe', emoji: '🟡', badgeLabel: 'Likely PHP', actionBadge: '?', panelTitle: 'Possibly PHP (weak signals only)' },
+  { path: '/php/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP detected', actionBadge: 'PHP', panelTitle: 'PHP usage detected' },
+  { path: '/header-only/', verdict: 'php', emoji: '🔴', badgeLabel: 'PHP detected', actionBadge: 'PHP', panelTitle: 'PHP usage detected' }
 ];
 
 function log(message) {
@@ -395,7 +395,7 @@ async function main() {
       'overlay to turn green after navigating /header-only/ → /static/',
       async () => {
         const value = await readOverlay();
-        return value && value.badgeLabel === 'PHP 非検出' ? value : null;
+        return value && value.badgeLabel === 'No PHP' ? value : null;
       },
       15000
     ).catch(() => null);

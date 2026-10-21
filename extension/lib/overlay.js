@@ -111,21 +111,21 @@
     bar.appendChild(el('span', 'icon', '⚠'));
 
     var text = el('span', 'text');
-    text.appendChild(el('span', 'host', settings.host || 'このサイト'));
+    text.appendChild(el('span', 'host', settings.host || 'This site'));
     text.appendChild(
-      el('span', null, ' は PHP 使用の兆候あり。警戒モードにより次回からブロックします。')
+      el('span', null, ' looks like it runs PHP. Guard mode will block it on the next visit.')
     );
 
     var actions = el('span', 'actions');
 
-    var allow = el('button', 'allow', '許可する');
+    var allow = el('button', 'allow', 'Allow');
     allow.type = 'button';
     allow.addEventListener('click', function () {
       hideGuardBanner();
       if (banner.onAllow) banner.onAllow();
     });
 
-    var leave = el('button', null, '離れる');
+    var leave = el('button', null, 'Leave');
     leave.type = 'button';
     leave.addEventListener('click', function () {
       if (banner.onLeave) banner.onLeave();
@@ -134,7 +134,7 @@
 
     var close = el('button', null, '×');
     close.type = 'button';
-    close.setAttribute('aria-label', '閉じる');
+    close.setAttribute('aria-label', 'Close');
     close.addEventListener('click', hideGuardBanner);
 
     actions.appendChild(allow);
@@ -195,14 +195,14 @@
     var panel = el('section', 'panel');
     panel.hidden = true;
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'PHP Simple Check の判定結果');
+    panel.setAttribute('aria-label', 'PHP Simple Check result');
 
     var head = el('div', 'panel-head');
     var panelEmoji = el('span', 'panel-emoji');
     var panelTitle = el('span', 'panel-title');
     var close = el('button', 'close', '×');
     close.type = 'button';
-    close.setAttribute('aria-label', '閉じる');
+    close.setAttribute('aria-label', 'Close');
     close.addEventListener('click', function () {
       hide();
       if (state.onClose) state.onClose();
@@ -214,9 +214,9 @@
     var summary = el('p', 'summary');
     var list = el('ul', 'signals');
     var facts = el('dl', 'facts');
-    var note = el('p', 'note', 'クライアント側で観測できるのは「兆候」だけです。PHP がサーバー内部で動いていても、応答に痕跡が出ない場合は 🟢 になります。');
+    var note = el('p', 'note', 'Client-side checks only see signals. If PHP runs without leaving traces in the response, the result stays 🟢.');
 
-    var siteDismiss = el('button', 'site-dismiss', 'このサイトでは表示しない');
+    var siteDismiss = el('button', 'site-dismiss', 'Hide on this site');
     siteDismiss.type = 'button';
     siteDismiss.hidden = true;
     siteDismiss.addEventListener('click', function () {
@@ -233,7 +233,7 @@
 
     var badge = el('button', 'badge');
     badge.type = 'button';
-    badge.title = 'クリックで詳細を表示';
+    badge.title = 'Click for details';
     var badgeEmoji = el('span', 'badge-emoji');
     var badgeLabel = el('span', 'badge-label');
     badge.appendChild(badgeEmoji);
@@ -277,7 +277,7 @@
     var signals = result.signals || [];
     if (!signals.length) {
       var empty = el('li');
-      empty.appendChild(el('span', 'signal-label', '検出できたシグナルはありません'));
+      empty.appendChild(el('span', 'signal-label', 'No signals detected'));
       refs.list.appendChild(empty);
       return;
     }
@@ -332,13 +332,14 @@
     refs.badgeEmoji.textContent = result.emoji;
     refs.badgeLabel.textContent = result.short || result.label;
     refs.badge.style.borderColor = result.color;
-    refs.badge.setAttribute('aria-label', result.emoji + ' ' + result.label + '（詳細を表示）');
+    refs.badge.setAttribute('aria-label', result.emoji + ' ' + result.label + ' (show details)');
     refs.panelEmoji.textContent = result.emoji;
     refs.panelTitle.textContent = result.label;
 
     var count = (result.signals || []).filter(function (signal) { return signal.weight > 0; }).length;
-    refs.summary.textContent = 'スコア ' + result.score + ' ・ PHP の手がかり ' + count + ' 件' +
-      (result.confidence === 'high' ? ' ・ 決定的なシグナルあり' : '');
+    refs.summary.textContent =
+      'Score ' + result.score + ' · ' + count + ' PHP signal' + (count === 1 ? '' : 's') +
+      (result.confidence === 'high' ? ' · decisive signal' : '');
 
     renderSignals(refs, result);
     renderFacts(refs, result);

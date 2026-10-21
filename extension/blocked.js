@@ -34,14 +34,14 @@
   function renderDetails(entry) {
     if (!entry) {
       $('note').textContent =
-        'このホストの記録が見つかりませんでした（すでに解除された可能性があります）。「許可して開く」で読み込みを続けられます。';
+        'No record for this host was found (it may already have been removed). “Allow and open” still continues the load.';
       return;
     }
 
     $('facts').hidden = false;
     $('score').textContent = String(entry.score);
     if (entry.at) {
-      $('checked').textContent = new Date(entry.at).toLocaleString('ja-JP');
+      $('checked').textContent = new Date(entry.at).toLocaleString();
     }
 
     var signals = Array.isArray(entry.signals) ? entry.signals : [];
@@ -78,7 +78,7 @@
   }
 
   async function init() {
-    $('host').textContent = host || '(不明なホスト)';
+    $('host').textContent = host || '(unknown host)';
     if (!host) {
       $('allow').disabled = true;
     }

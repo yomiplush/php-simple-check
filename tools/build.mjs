@@ -42,12 +42,12 @@ const USERSCRIPT_VARIANTS = [
   {
     file: 'php-simple-check-ios.user.js',
     suffix: ' (iOS)',
-    platform: 'iOS・iPadOS・macOS の Safari（Userscripts アプリ）用'
+    platform: 'For Safari on iOS, iPadOS and macOS (Userscripts app)'
   },
   {
     file: 'php-simple-check-android.user.js',
     suffix: ' (Android)',
-    platform: 'Android の Firefox（Tampermonkey）用'
+    platform: 'For Firefox on Android (Tampermonkey)'
   }
 ];
 
@@ -105,7 +105,7 @@ async function verifyVersions(manifest, pkg) {
 
 function userscriptDescription(manifest, variant) {
   return variant.platform
-    ? `${variant.platform}。${manifest.description}`
+    ? `${variant.platform}. ${manifest.description}`
     : manifest.description;
 }
 

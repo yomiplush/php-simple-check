@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "PHP Simple Check",
   "short_name": "PHP Check",
-  "version": "1.3.1",
-  "description": "読み込んだサイトのレスポンスヘッダー・Cookie・DOM から、PHP が使われているかを簡易判定します（🔴 PHP / 🟢 非 PHP）。",
+  "version": "1.4.0",
+  "description": "Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP).",
   "minimum_chrome_version": "111",
   "permissions": [
     "webRequest",
@@ -62,5 +62,6 @@
         "https://*/*"
       ]
     }
-  ]
+  ],
+  "homepage_url": "https://github.com/yomiplush/php-simple-check"
 }

@@ -38,30 +38,30 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.3.1';
+  var VERSION = '1.4.0';
 
   var VERDICTS = {
     php: {
       key: 'php',
       emoji: '🔴',
-      label: 'PHP 使用の兆候あり',
-      short: 'PHP 検出',
+      label: 'PHP usage detected',
+      short: 'PHP detected',
       badge: 'PHP',
       color: '#d32f2f'
     },
     maybe: {
       key: 'maybe',
       emoji: '🟡',
-      label: 'PHP の可能性あり（弱い兆候のみ）',
-      short: '要確認',
+      label: 'Possibly PHP (weak signals only)',
+      short: 'Likely PHP',
       badge: '?',
       color: '#f9a825'
     },
     none: {
       key: 'none',
       emoji: '🟢',
-      label: 'PHP の兆候なし',
-      short: 'PHP 非検出',
+      label: 'No PHP signals found',
+      short: 'No PHP',
       badge: 'OK',
       color: '#2e7d32'
     }
@@ -73,18 +73,18 @@
 
   /** Cookie names that only PHP stacks hand out. */
   var COOKIE_SIGNATURES = [
-    { id: 'cookie-php-session', weight: 3, label: 'PHP セッション Cookie', pattern: /^PHPSESSID/i },
-    { id: 'cookie-wordpress', weight: 3, label: 'WordPress の Cookie', pattern: /^(?:wordpress(?:_sec)?_|wp-settings-|wp_woocommerce_session_)/i },
-    { id: 'cookie-laravel', weight: 3, label: 'Laravel のセッション Cookie', pattern: /^laravel_session$/i },
-    { id: 'cookie-codeigniter', weight: 3, label: 'CodeIgniter のセッション Cookie', pattern: /^ci_session/i },
-    { id: 'cookie-cakephp', weight: 3, label: 'CakePHP のセッション Cookie', pattern: /^CAKEPHP$/i },
-    { id: 'cookie-craft', weight: 3, label: 'Craft CMS の Cookie', pattern: /^(?:CraftSessionId|CRAFT_CSRF_TOKEN)$/i },
-    { id: 'cookie-typo3', weight: 3, label: 'TYPO3 の Cookie', pattern: /^fe_typo_user$/i },
-    { id: 'cookie-drupal', weight: 3, label: 'Drupal / Symfony 系のセッション Cookie', pattern: /^S?SESS[0-9a-f]{32}$/i },
-    { id: 'cookie-symfony', weight: 3, label: 'Symfony 系の Cookie', pattern: /^(?:sf_redirect|symfony)$/i },
-    { id: 'cookie-joomla', weight: 3, label: 'Joomla の Cookie', pattern: /^joomla_/i },
-    { id: 'cookie-phpbb', weight: 3, label: 'phpBB の Cookie', pattern: /^phpbb\d*_(?:sid|data)$/i },
-    { id: 'cookie-xsrf', weight: 1, label: 'XSRF-TOKEN Cookie（PHP フレームワークでよく使われる）', pattern: /^XSRF-TOKEN$/i }
+    { id: 'cookie-php-session', weight: 3, label: 'PHP session cookie', pattern: /^PHPSESSID/i },
+    { id: 'cookie-wordpress', weight: 3, label: 'WordPress cookie', pattern: /^(?:wordpress(?:_sec)?_|wp-settings-|wp_woocommerce_session_)/i },
+    { id: 'cookie-laravel', weight: 3, label: 'Laravel session cookie', pattern: /^laravel_session$/i },
+    { id: 'cookie-codeigniter', weight: 3, label: 'CodeIgniter session cookie', pattern: /^ci_session/i },
+    { id: 'cookie-cakephp', weight: 3, label: 'CakePHP session cookie', pattern: /^CAKEPHP$/i },
+    { id: 'cookie-craft', weight: 3, label: 'Craft CMS cookie', pattern: /^(?:CraftSessionId|CRAFT_CSRF_TOKEN)$/i },
+    { id: 'cookie-typo3', weight: 3, label: 'TYPO3 cookie', pattern: /^fe_typo_user$/i },
+    { id: 'cookie-drupal', weight: 3, label: 'Drupal / Symfony session cookie', pattern: /^S?SESS[0-9a-f]{32}$/i },
+    { id: 'cookie-symfony', weight: 3, label: 'Symfony cookie', pattern: /^(?:sf_redirect|symfony)$/i },
+    { id: 'cookie-joomla', weight: 3, label: 'Joomla cookie', pattern: /^joomla_/i },
+    { id: 'cookie-phpbb', weight: 3, label: 'phpBB cookie', pattern: /^phpbb\d*_(?:sid|data)$/i },
+    { id: 'cookie-xsrf', weight: 1, label: 'XSRF-TOKEN cookie (common in PHP frameworks)', pattern: /^XSRF-TOKEN$/i }
   ];
 
   /** <meta name="generator"> values. */
@@ -104,10 +104,10 @@
 
   /** Headers emitted by PHP frameworks / runtimes. */
   var FRAMEWORK_HEADERS = [
-    { id: 'header-drupal', weight: 3, label: 'Drupal のレスポンスヘッダ', prefix: 'x-drupal' },
-    { id: 'header-typo3', weight: 3, label: 'TYPO3 のレスポンスヘッダ', prefix: 'x-typo3' },
-    { id: 'header-symfony', weight: 3, label: 'Symfony のレスポンスヘッダ', prefix: 'x-symfony' },
-    { id: 'header-laravel', weight: 3, label: 'Laravel のレスポンスヘッダ', prefix: 'x-laravel' }
+    { id: 'header-drupal', weight: 3, label: 'Drupal response header', prefix: 'x-drupal' },
+    { id: 'header-typo3', weight: 3, label: 'TYPO3 response header', prefix: 'x-typo3' },
+    { id: 'header-symfony', weight: 3, label: 'Symfony response header', prefix: 'x-symfony' },
+    { id: 'header-laravel', weight: 3, label: 'Laravel response header', prefix: 'x-laravel' }
   ];
 
   function safeUrl(value, base) {
@@ -220,7 +220,7 @@
       id: 'header-x-powered-by-php',
       source: 'header',
       weight: 3,
-      label: 'X-Powered-By が PHP',
+      label: 'X-Powered-By reports PHP',
       test: function (ctx) {
         var value = ctx.header('x-powered-by');
         if (!value || !/(?:^|[\s,;/])php(?:[\s/;,]|$)/i.test(value)) return null;
@@ -231,7 +231,7 @@
       id: 'header-x-powered-by-other',
       source: 'header',
       weight: -2,
-      label: 'X-Powered-By が PHP 以外',
+      label: 'X-Powered-By reports something else',
       test: function (ctx) {
         var value = ctx.header('x-powered-by');
         if (!value || /php/i.test(value)) return null;
@@ -242,7 +242,7 @@
       id: 'header-server-php',
       source: 'header',
       weight: 3,
-      label: 'Server ヘッダに PHP / HHVM',
+      label: 'Server header mentions PHP / HHVM',
       test: function (ctx) {
         var value = ctx.header('server');
         if (!value || !/(?:php|hhvm)/i.test(value)) return null;
@@ -253,7 +253,7 @@
       id: 'header-set-cookie-php-session',
       source: 'header',
       weight: 3,
-      label: 'Set-Cookie に PHP セッション',
+      label: 'Set-Cookie carries a PHP session',
       test: function (ctx) {
         var value = ctx.header('set-cookie');
         if (!value || !/PHPSESSID=/i.test(value)) return null;
@@ -264,7 +264,7 @@
       id: 'header-x-generator',
       source: 'header',
       weight: 3,
-      label: 'X-Generator が PHP 製 CMS',
+      label: 'X-Generator names a PHP CMS',
       test: function (ctx) {
         var value = ctx.header('x-generator');
         if (!value) return null;
@@ -281,7 +281,7 @@
       id: 'cookie-signature',
       source: 'cookie',
       weight: 3,
-      label: 'PHP フレームワークの Cookie',
+      label: 'PHP framework cookie',
       test: function (ctx) {
         var hits = [];
         ctx.cookieNames.forEach(function (name) {
@@ -307,7 +307,7 @@
       id: 'generator-cms',
       source: 'dom',
       weight: 3,
-      label: 'PHP 製 CMS の generator',
+      label: 'generator meta names a PHP CMS',
       test: function (ctx) {
         var generator = ctx.dom.generator;
         if (!generator || typeof generator !== 'string') return null;
@@ -323,7 +323,7 @@
       id: 'generator-static',
       source: 'dom',
       weight: -2,
-      label: '静的サイトジェネレーター',
+      label: 'Static site generator',
       test: function (ctx) {
         var generator = ctx.dom.generator;
         if (!generator || typeof generator !== 'string' || !STATIC_GENERATOR.test(generator)) return null;
@@ -336,7 +336,7 @@
       id: 'url-php',
       source: 'url',
       weight: 3,
-      label: 'ページ URL が .php',
+      label: 'Page URL ends in .php',
       test: function (ctx) {
         if (!ctx.pageUrl || !PHP_EXTENSION.test(ctx.pageUrl.pathname)) return null;
         return { detail: ctx.pageUrl.pathname };
@@ -346,7 +346,7 @@
       id: 'resource-php',
       source: 'dom',
       weight: 3,
-      label: 'PHP ファイルを読み込んでいる',
+      label: 'Loads PHP files',
       test: function (ctx) {
         var urls = firstPartyPhpUrls(ctx.resources, ctx);
         if (!urls.length) return null;
@@ -357,7 +357,7 @@
       id: 'anchor-php',
       source: 'dom',
       weight: 2,
-      label: '同一サイトの .php へのリンク',
+      label: 'Same-site links to .php',
       test: function (ctx) {
         var urls = firstPartyPhpUrls(ctx.anchors, ctx);
         if (!urls.length) return null;
@@ -368,7 +368,7 @@
       id: 'query-hints',
       source: 'url',
       weight: 1,
-      label: 'PHP っぽいクエリパラメータ',
+      label: 'PHP-like query parameters',
       test: function (ctx) {
         if (!ctx.pageUrl) return null;
         var keys = ['p', 'page_id', 'cat', 'attachment_id', 'preview_id'];
@@ -383,23 +383,23 @@
       id: 'wp-paths',
       source: 'dom',
       weight: 3,
-      label: 'WordPress のパス (/wp-content/, /wp-includes/)',
+      label: 'WordPress paths (/wp-content/, /wp-includes/)',
       test: function (ctx) {
         var all = ctx.resources.concat(ctx.anchors);
         var hit = all.filter(function (url) { return /\/wp-(?:content|includes)\//i.test(url.pathname); });
         if (!hit.length && !ctx.markers.inlineHasWpPaths) return null;
-        return { detail: hit.length ? hit[0].pathname : 'インラインスクリプト内の /wp-content/' };
+        return { detail: hit.length ? hit[0].pathname : '/wp-content/ inside inline scripts' };
       }
     },
     {
       id: 'wp-api',
       source: 'dom',
       weight: 3,
-      label: 'WordPress REST API への参照',
+      label: 'Reference to the WordPress REST API',
       test: function (ctx) {
         var hit = ctx.apiLinks.filter(function (url) { return /api\.w\.org|\/wp-json/i.test(url.href); });
         if (hit.length) return { detail: hit[0].href };
-        if (ctx.markers.inlineHasWpJson) return { detail: 'インラインスクリプト内の wp-json' };
+        if (ctx.markers.inlineHasWpJson) return { detail: 'wp-json inside inline scripts' };
         return null;
       }
     },
@@ -407,42 +407,42 @@
       id: 'wp-globals',
       source: 'dom',
       weight: 3,
-      label: 'WordPress のグローバル変数',
+      label: 'WordPress globals present',
       test: function (ctx) {
         if (!ctx.markers.wpSettings) return null;
-        return { detail: 'window.wp が存在' };
+        return { detail: 'window.wp is present' };
       }
     },
     {
       id: 'drupal-markers',
       source: 'dom',
       weight: 3,
-      label: 'Drupal のマーカー',
+      label: 'Drupal markers',
       test: function (ctx) {
         var hit = ctx.resources.filter(function (url) { return /\/sites\/default\/files\//i.test(url.pathname); });
         if (!hit.length && !ctx.markers.drupalSettings) return null;
-        return { detail: hit.length ? hit[0].pathname : 'drupalSettings が存在' };
+        return { detail: hit.length ? hit[0].pathname : 'drupalSettings is present' };
       }
     },
     {
       id: 'joomla-markers',
       source: 'dom',
       weight: 3,
-      label: 'Joomla のマーカー',
+      label: 'Joomla markers',
       test: function (ctx) {
         var hit = ctx.resources.filter(function (url) { return /\/media\/system\//i.test(url.pathname); });
         if (!hit.length && !ctx.markers.joomlaOptions) return null;
-        return { detail: hit.length ? hit[0].pathname : 'window.Joomla が存在' };
+        return { detail: hit.length ? hit[0].pathname : 'window.Joomla is present' };
       }
     },
     {
       id: 'inline-php-url',
       source: 'dom',
       weight: 2,
-      label: 'インラインスクリプト内の .php URL',
+      label: '.php URL inside inline scripts',
       test: function (ctx) {
         if (!ctx.markers.inlineHasPhpUrl) return null;
-        return { detail: 'スクリプト文字列に .php を検出' };
+        return { detail: '.php found in a script string' };
       }
     }
   ];

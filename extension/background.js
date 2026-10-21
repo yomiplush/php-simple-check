@@ -42,7 +42,7 @@ const STATUS_ICONS = {
   }
 };
 
-const IDLE_TITLE = 'PHP Simple Check — 判定中…';
+const IDLE_TITLE = 'PHP Simple Check — analysing…';
 
 const CAPTURED_HEADERS = new Set(['x-powered-by', 'server', 'set-cookie', 'x-generator']);
 const CAPTURED_PREFIXES = ['x-drupal', 'x-typo3', 'x-symfony', 'x-debug-token', 'x-laravel', 'x-php', 'x-csrf'];
@@ -52,7 +52,7 @@ const evalTimers = new Map();
 
 /* ------------------------------------------------------------- guard mode */
 /*
- * "警戒モード": once a site is judged 🔴, block that host on subsequent
+ * "Guard mode": once a site is judged 🔴, block that host on subsequent
  * navigations with a dynamic declarativeNetRequest rule that redirects the main
  * frame to blocked.html. A response cannot be inspected before it is delivered,
  * so the current load always completes — the guard kicks in from the next one.
