@@ -4,6 +4,10 @@ Copy/paste material for the Chrome Web Store console. The store build is
 `dist/php-simple-check-store-vX.Y.Z.zip` (permissions: `storage` only, no host
 permissions, no guard mode).
 
+Paste-ready plain text for the "Description" field:
+[`description-en.txt`](description-en.txt) ·
+[`description-ja.txt`](description-ja.txt).
+
 ---
 
 ## English (default listing)

@@ -1,0 +1,46 @@
+PHP Simple Check tells you whether the page you are looking at is served by PHP.
+
+Single purpose: report whether the current page is served by PHP by inspecting the page's own response
+headers, cookies, URLs and markup. It does nothing else — no blocking, no browsing-history access, no
+accounts, no remote servers.
+
+After a page loads, the extension inspects signals that are already available to
+the page itself — response headers, cookies the page can read, URLs, and markup —
+then shows one of three verdicts:
+
+  🔴 PHP usage detected
+  🟡 Possibly PHP (weak signals only)
+  🟢 No PHP signals found
+
+The verdict appears four ways: the toolbar icon takes the verdict colour, a small
+toolbar badge shows PHP / ? / OK, an optional badge sits in the bottom-right of
+the page, and the popup lists every signal that contributed to the score.
+
+Why people use it
+• Check which stack a site runs before reporting a bug or filing a security report.
+• Confirm a migration away from PHP actually happened.
+• Learn how sites are built without opening developer tools.
+
+Privacy first
+• No servers, no analytics, no accounts. Everything is computed on your device.
+• The only network request is a HEAD request to the page you already opened, used
+  to read its own response headers. Nothing is sent to us or to third parties.
+• The store build requests a single permission: storage (for your badge preference
+  and per-site choices). It has no host permissions, reads no cookies through
+  browser APIs, intercepts no network traffic, and ships no remote code.
+• Google Chrome Web Store Limited Use: no data is sold, transferred or used for
+  purposes unrelated to this single purpose, and none of it is used for
+  creditworthiness or lending.
+
+Good to know
+• A client-side check can only see signals. A site that hides its stack (proxy
+  stripping headers, extension-less URLs, no session cookies) will show 🟢 even if
+  PHP is running. The popup explains this and lists what was actually observed.
+• It is a stack fingerprint, not a malware or security scanner. "Uses PHP" does not
+  mean "dangerous" — a large share of the web runs on PHP.
+• Works on http and https pages. Chrome internal pages are out of scope.
+
+Available in 12 languages: English, 日本語, 简体中文, 繁體中文, 한국어, Español,
+Français, Deutsch, Português (Brasil), Русский, العربية, हिन्दी.
+
+Open source (MIT): https://github.com/yomiplush/php-simple-check
