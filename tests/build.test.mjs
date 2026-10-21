@@ -54,6 +54,27 @@ test('icons are real PNG files', async () => {
   }
 });
 
+test('status icon variants exist for every verdict and size', async () => {
+  for (const state of ['php', 'maybe', 'none']) {
+    for (const size of [16, 32, 48, 128]) {
+      const png = await readFile(path.join(ROOT, 'extension', `icons/status-${state}-${size}.png`));
+      assert.deepEqual([...png.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], `status-${state}-${size}.png`);
+      assert.equal(png.readUInt32BE(16), size);
+      assert.equal(png.readUInt32BE(20), size);
+    }
+  }
+});
+
+test('the worker maps every verdict to its icon set', async () => {
+  const background = await read('extension/background.js');
+  for (const state of ['php', 'maybe', 'none']) {
+    for (const size of [16, 32, 48, 128]) {
+      assert.ok(background.includes(`icons/status-${state}-${size}.png`), `missing ${state}/${size}`);
+    }
+  }
+  assert.ok(background.includes('chrome.action.setIcon'));
+});
+
 test('the committed userscript matches its sources and metadata', async () => {
   const userscript = await read('userscript/php-simple-check.user.js');
 

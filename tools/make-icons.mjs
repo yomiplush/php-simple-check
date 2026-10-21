@@ -18,10 +18,32 @@ const OUT_DIR = path.join(ROOT, 'extension', 'icons');
 const SIZES = [16, 32, 48, 128];
 const SAMPLES = 4; // supersampling grid per axis
 
-const COLORS = {
-  background: [31, 41, 55], // #1f2937
-  lens: [248, 250, 252], // #f8fafc
-  dot: [139, 92, 246] // #8b5cf6
+/**
+ * The action icon doubles as the verdict display: the square takes the verdict
+ * colour so a glance at the toolbar is enough. "idle" is the neutral icon used
+ * before a page has been judged (and for the store/management pages).
+ */
+const PALETTES = {
+  idle: {
+    background: [31, 41, 55], // #1f2937
+    lens: [248, 250, 252], // #f8fafc
+    dot: [139, 92, 246] // #8b5cf6
+  },
+  php: {
+    background: [198, 40, 40], // #c62828 — white lens keeps 4.5:1 contrast
+    lens: [255, 255, 255],
+    dot: [255, 205, 210] // #ffcdd2
+  },
+  maybe: {
+    background: [178, 106, 0], // #b26a00
+    lens: [255, 255, 255],
+    dot: [255, 224, 178] // #ffe0b2
+  },
+  none: {
+    background: [46, 125, 50], // #2e7d32
+    lens: [255, 255, 255],
+    dot: [200, 230, 201] // #c8e6c9
+  }
 };
 
 function roundedRectCoverage(x, y, radius) {
@@ -48,22 +70,22 @@ function segmentDistance(px, py, ax, ay, bx, by) {
   return Math.hypot(px - x, py - y);
 }
 
-function colorAt(x, y) {
+function colorAt(x, y, palette) {
   if (!roundedRectCoverage(x, y, 0.225)) return null;
 
   const dotDistance = Math.hypot(x - 0.745, y - 0.245);
-  if (dotDistance <= 0.105) return COLORS.dot;
+  if (dotDistance <= 0.105) return palette.dot;
 
   const ringDistance = Math.hypot(x - 0.43, y - 0.4);
-  if (ringDistance >= 0.145 && ringDistance <= 0.245) return COLORS.lens;
+  if (ringDistance >= 0.145 && ringDistance <= 0.245) return palette.lens;
 
   const handleDistance = segmentDistance(x, y, 0.575, 0.565, 0.78, 0.78);
-  if (handleDistance <= 0.0475) return COLORS.lens;
+  if (handleDistance <= 0.0475) return palette.lens;
 
-  return COLORS.background;
+  return palette.background;
 }
 
-function renderIcon(size) {
+function renderIcon(size, palette) {
   const rgba = new Uint8Array(size * size * 4);
   const step = 1 / (size * SAMPLES);
   const samplesPerPixel = SAMPLES * SAMPLES;
@@ -79,7 +101,7 @@ function renderIcon(size) {
         for (let sx = 0; sx < SAMPLES; sx += 1) {
           const px = (x * SAMPLES + sx + 0.5) * step;
           const py = (y * SAMPLES + sy + 0.5) * step;
-          const color = colorAt(px, py);
+          const color = colorAt(px, py, palette);
           if (!color) continue;
           r += color[0];
           g += color[1];
@@ -104,9 +126,12 @@ function renderIcon(size) {
 
 await mkdir(OUT_DIR, { recursive: true });
 
-for (const size of SIZES) {
-  const png = encodePng(size, size, renderIcon(size));
-  const file = path.join(OUT_DIR, `icon${size}.png`);
-  await writeFile(file, png);
-  console.log(`wrote ${path.relative(ROOT, file)} (${png.length} bytes)`);
+for (const [name, palette] of Object.entries(PALETTES)) {
+  for (const size of SIZES) {
+    const fileName = name === 'idle' ? `icon${size}.png` : `status-${name}-${size}.png`;
+    const file = path.join(OUT_DIR, fileName);
+    const png = encodePng(size, size, renderIcon(size, palette));
+    await writeFile(file, png);
+    console.log(`wrote ${path.relative(ROOT, file)} (${png.length} bytes)`);
+  }
 }

@@ -14,6 +14,36 @@ importScripts('lib/detector.js');
 const STATE_PREFIX = 'php-simple-check:tab:';
 const MAX_TRACKED_TABS = 60;
 
+/** The action icon itself shows the verdict, so the toolbar reads at a glance. */
+const STATUS_ICONS = {
+  idle: {
+    16: 'icons/icon16.png',
+    32: 'icons/icon32.png',
+    48: 'icons/icon48.png',
+    128: 'icons/icon128.png'
+  },
+  php: {
+    16: 'icons/status-php-16.png',
+    32: 'icons/status-php-32.png',
+    48: 'icons/status-php-48.png',
+    128: 'icons/status-php-128.png'
+  },
+  maybe: {
+    16: 'icons/status-maybe-16.png',
+    32: 'icons/status-maybe-32.png',
+    48: 'icons/status-maybe-48.png',
+    128: 'icons/status-maybe-128.png'
+  },
+  none: {
+    16: 'icons/status-none-16.png',
+    32: 'icons/status-none-32.png',
+    48: 'icons/status-none-48.png',
+    128: 'icons/status-none-128.png'
+  }
+};
+
+const IDLE_TITLE = 'PHP Simple Check — 判定中…';
+
 const CAPTURED_HEADERS = new Set(['x-powered-by', 'server', 'set-cookie', 'x-generator']);
 const CAPTURED_PREFIXES = ['x-drupal', 'x-typo3', 'x-symfony', 'x-debug-token', 'x-laravel', 'x-php', 'x-csrf'];
 
@@ -27,6 +57,7 @@ function blankState() {
     headersDocumentId: null,
     dom: null,
     result: null,
+    iconState: 'idle',
     probedDocumentId: null,
     probedFallback: false,
     updatedAt: 0
@@ -58,7 +89,8 @@ async function persistState(tabId, state) {
         url: state.url,
         headers: state.headers,
         headersDocumentId: state.headersDocumentId,
-        result: state.result
+        result: state.result,
+        iconState: state.iconState
       }
     });
   } catch (error) {
@@ -80,6 +112,7 @@ async function stateFor(tabId) {
       state.headers = saved.headers || null;
       state.headersDocumentId = saved.headersDocumentId || null;
       state.result = saved.result || null;
+      state.iconState = saved.iconState || 'idle';
     }
   } catch (error) {
     /* fall back to a blank state */
@@ -144,12 +177,27 @@ async function applyBadge(tabId, result) {
   const meta = PHPSimpleCheck.verdicts[result.verdict];
   if (!meta) return;
   try {
+    await chrome.action.setIcon({
+      tabId: tabId,
+      path: STATUS_ICONS[result.verdict] || STATUS_ICONS.idle
+    });
     await chrome.action.setBadgeBackgroundColor({ tabId: tabId, color: meta.color });
     await chrome.action.setBadgeText({ tabId: tabId, text: meta.badge });
     await chrome.action.setTitle({
       tabId: tabId,
       title: meta.emoji + ' ' + meta.label + ' — PHP Simple Check'
     });
+  } catch (error) {
+    /* tab closed while we were working */
+  }
+}
+
+/** Back to the neutral icon while a new document is loading. */
+async function resetAction(tabId) {
+  try {
+    await chrome.action.setIcon({ tabId: tabId, path: STATUS_ICONS.idle });
+    await chrome.action.setBadgeText({ tabId: tabId, text: '' });
+    await chrome.action.setTitle({ tabId: tabId, title: IDLE_TITLE });
   } catch (error) {
     /* tab closed while we were working */
   }
@@ -240,6 +288,7 @@ async function evaluateTab(tabId) {
   result.tabId = tabId;
 
   state.result = result;
+  state.iconState = result.verdict;
   state.url = pageUrl;
   state.updatedAt = Date.now();
   void persistState(tabId, state);
@@ -259,6 +308,7 @@ chrome.webRequest.onBeforeRequest.addListener(
     state.updatedAt = Date.now();
     tabStates.set(details.tabId, state);
     void persistState(details.tabId, state);
+    void resetAction(details.tabId);
   },
   { urls: ['http://*/*', 'https://*/*'], types: ['main_frame'] }
 );
@@ -364,8 +414,10 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo) {
   state.result = null;
   state.probedDocumentId = null;
   state.probedFallback = false;
+  state.iconState = 'idle';
   state.updatedAt = Date.now();
   void persistState(tabId, state);
+  void resetAction(tabId);
 });
 
 chrome.tabs.onRemoved.addListener(function (tabId) {

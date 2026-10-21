@@ -310,7 +310,8 @@ async function main() {
              text,
              title,
              verdict: entry[1].result && entry[1].result.verdict,
-             score: entry[1].result && entry[1].result.score
+             score: entry[1].result && entry[1].result.score,
+             icon: entry[1].iconState || null
            }));
          })`
       );
@@ -322,6 +323,7 @@ async function main() {
       if (!action) problems.push('extension state missing for this tab');
       else {
         if (action.verdict !== testCase.verdict) problems.push(`verdict ${action.verdict} != ${testCase.verdict}`);
+        if (action.icon !== testCase.verdict) problems.push(`action icon state ${action.icon} != ${testCase.verdict}`);
         if (action.text !== testCase.actionBadge) problems.push(`toolbar text ${action.text} != ${testCase.actionBadge}`);
         if (!action.title.startsWith(testCase.emoji)) problems.push(`toolbar title "${action.title}" lacks ${testCase.emoji}`);
       }
@@ -331,6 +333,24 @@ async function main() {
 
       await client.send('Target.closeTarget', { targetId });
     }
+
+    // Toolbar icons must actually be packaged inside the extension.
+    const iconFiles = await evaluate(
+      workerSession,
+      `(async () => {
+         const paths = [];
+         for (const state of ['php', 'maybe', 'none']) {
+           for (const size of [16, 32, 48, 128]) paths.push('icons/status-' + state + '-' + size + '.png');
+         }
+         for (const size of [16, 32, 48, 128]) paths.push('icons/icon' + size + '.png');
+         const out = {};
+         for (const path of paths) out[path] = (await fetch(chrome.runtime.getURL(path))).status;
+         return out;
+       })()`
+    );
+    const missingIcons = Object.entries(iconFiles).filter(([, status]) => status !== 200).map(([path]) => path);
+    if (missingIcons.length) fail(`icons not packaged: ${missingIcons.join(', ')}`);
+    else log(`✔ toolbar icons packaged (${Object.keys(iconFiles).length} files)`);
 
     // ---- cold service worker: no stale evidence after a navigation ---------
     const navCase = await client.send('Target.createTarget', { url: origin + '/header-only/' });
