@@ -13,11 +13,11 @@
     ':host{all:initial}',
     '*{box-sizing:border-box}',
     '.wrap{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font:400 12px/1.45 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;color:#111}',
-    '.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid #d0d7de;background:#fff;color:#111;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:transform .12s ease,box-shadow .12s ease}',
+    '.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid #d0d7de;background:#fff;color:#111;font:inherit;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:transform .12s ease,box-shadow .12s ease}',
     '.badge:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.24)}',
     '.badge:focus-visible{outline:2px solid #0969da;outline-offset:2px}',
     '.badge-emoji{font-size:13px;line-height:1}',
-    '.panel{width:min(340px,calc(100vw - 32px));max-height:min(60vh,520px);overflow:auto;padding:12px;border-radius:12px;border:1px solid #d0d7de;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.22)}',
+    '.panel{width:min(340px,calc(100vw - 32px));max-height:min(60vh,520px);overflow:auto;overscroll-behavior:contain;padding:12px;border-radius:12px;border:1px solid #d0d7de;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.22)}',
     '.panel[hidden]{display:none}',
     '.panel-head{display:flex;align-items:center;gap:6px;margin:0 0 6px}',
     '.panel-emoji{font-size:16px;line-height:1}',
@@ -38,6 +38,19 @@
     '.facts dd{margin:0;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
     '.facts:empty{display:none}',
     '.note{margin:0;font-size:10px;line-height:1.5;color:#6e7781}',
+    '.site-dismiss{display:block;width:100%;margin:0 0 8px;padding:7px 8px;border:1px solid #d0d7de;border-radius:8px;background:transparent;color:#57606a;font:inherit;font-size:11px;cursor:pointer}',
+    '.site-dismiss:hover{background:#f3f4f6;color:#111}',
+    '.site-dismiss[hidden]{display:none}',
+    /* Phones / tablets: bigger tap targets and a taller scrollable panel. */
+    '@media (pointer:coarse){',
+    '.badge{padding:8px 13px;font-size:13px}',
+    '.badge-emoji{font-size:15px}',
+    '.panel{width:min(360px,calc(100vw - 24px));max-height:min(70vh,560px);padding:14px}',
+    '.close{font-size:20px;padding:6px 8px}',
+    '.signal-label{font-size:12px}',
+    '.signal-detail{font-size:11px}',
+    '.site-dismiss{padding:10px 8px;font-size:12px}',
+    '}',
     '@media (prefers-color-scheme:dark){',
     '.wrap{color:#e6edf3}',
     '.badge{background:#161b22;color:#e6edf3;border-color:#30363d}',
@@ -48,6 +61,8 @@
     '.facts dd{color:#8b949e}',
     '.close{color:#8b949e}',
     '.close:hover{background:#21262d;color:#e6edf3}',
+    '.site-dismiss{color:#8b949e;border-color:#30363d}',
+    '.site-dismiss:hover{background:#21262d;color:#e6edf3}',
     '}'
   ].join('\n');
 
@@ -56,7 +71,8 @@
     refs: null,
     result: null,
     hidden: false,
-    onClose: null
+    onClose: null,
+    onSiteDismiss: null
   };
 
   function el(tag, className, text) {
@@ -71,9 +87,18 @@
 
     var host = el('div');
     host.id = HOST_ID;
+    // Sit a little higher on touch devices so Safari's bottom bar does not
+    // cover the badge.
+    var coarsePointer = false;
+    try {
+      coarsePointer = Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    } catch (error) {
+      coarsePointer = false;
+    }
+    var offset = coarsePointer ? 26 : 16;
     host.style.cssText =
-      'all:initial;position:fixed;right:calc(16px + env(safe-area-inset-right, 0px));' +
-      'bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:2147483647;display:block;';
+      'all:initial;position:fixed;right:calc(' + offset + 'px + env(safe-area-inset-right, 0px));' +
+      'bottom:calc(' + offset + 'px + env(safe-area-inset-bottom, 0px));z-index:2147483647;display:block;';
     var shadow = host.attachShadow({ mode: 'open' });
 
     var style = el('style');
@@ -105,10 +130,19 @@
     var facts = el('dl', 'facts');
     var note = el('p', 'note', 'クライアント側で観測できるのは「兆候」だけです。PHP がサーバー内部で動いていても、応答に痕跡が出ない場合は 🟢 になります。');
 
+    var siteDismiss = el('button', 'site-dismiss', 'このサイトでは表示しない');
+    siteDismiss.type = 'button';
+    siteDismiss.hidden = true;
+    siteDismiss.addEventListener('click', function () {
+      hide();
+      if (state.onSiteDismiss) state.onSiteDismiss();
+    });
+
     panel.appendChild(head);
     panel.appendChild(summary);
     panel.appendChild(list);
     panel.appendChild(facts);
+    panel.appendChild(siteDismiss);
     panel.appendChild(note);
 
     var badge = el('button', 'badge');
@@ -139,6 +173,7 @@
       summary: summary,
       list: list,
       facts: facts,
+      siteDismiss: siteDismiss,
       badge: badge,
       badgeEmoji: badgeEmoji,
       badgeLabel: badgeLabel
@@ -192,10 +227,16 @@
     });
   }
 
-  function render(result) {
+  function render(result, options) {
     if (!result || !result.verdict) return;
     var refs = ensure();
     state.result = result;
+    if (options && (options.onSiteDismiss || options.allowSiteDismiss)) {
+      state.onSiteDismiss = options.onSiteDismiss || null;
+      refs.siteDismiss.hidden = false;
+    } else {
+      refs.siteDismiss.hidden = true;
+    }
     if (state.hidden) {
       state.host.style.display = 'none';
       return;

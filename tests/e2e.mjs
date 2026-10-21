@@ -30,20 +30,20 @@ const EXTENSION_DIR = process.env.EXTENSION_DIR
 const CHROME = process.env.CHROME_BIN || 'google-chrome-stable';
 
 const STATIC_PAGE = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>static</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>static</title>
 <script src="/static/app.js"></script></head>
 <body><h1>Static site</h1><a href="/static/about">About</a></body></html>`;
 
 const LEGACY_PAGE = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>legacy</title></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>legacy</title></head>
 <body><h1>Legacy links</h1><a href="/legacy/contact.php">Contact</a></body></html>`;
 
 const HEADER_ONLY_PAGE = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>header only</title></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>header only</title></head>
 <body><h1>Nothing but response headers</h1></body></html>`;
 
 const PHP_PAGE = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>php</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>php</title>
 <link rel="stylesheet" href="/wp-content/themes/demo/style.css"></head>
 <body><h1>WordPress-ish</h1><a href="/php/hello.php">hello</a></body></html>`;
 
@@ -442,6 +442,121 @@ async function main() {
       else log(`✔ userscript ${testCase.path} → ${testCase.emoji} ${testCase.badgeLabel}`);
 
       await client.send('Target.closeTarget', { targetId });
+    }
+
+    // ---- mobile viewport (iPhone-sized Safari / Firefox for Android) --------
+    {
+      const url = origin + '/php/';
+      const { targetId } = await client.send('Target.createTarget', { url });
+      const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true });
+      await clearCookies(sessionId);
+      await client.send('Page.enable', {}, sessionId).catch(() => {});
+      await client
+        .send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: true }, sessionId)
+        .catch(() => {});
+      await client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 }, sessionId).catch(() => {});
+      await client.send('Page.reload', {}, sessionId).catch(() => {});
+
+      await waitFor(`mobile document ready`, async () => {
+        const state = await evaluate(sessionId, '({ ready: document.readyState, w: innerWidth })');
+        return state && state.ready === 'complete' && state.w === 390 ? state : null;
+      });
+
+      await evaluate(sessionId, userscript);
+      await waitFor('mobile overlay', async () => {
+        const value = await evaluate(sessionId, `document.getElementById('php-simple-check-badge') ? true : null`);
+        return value ? true : null;
+      });
+
+      const geometry = await evaluate(
+        sessionId,
+        `(() => {
+           const host = document.getElementById('php-simple-check-badge');
+           const root = host.shadowRoot;
+           const rect = root.querySelector('.badge').getBoundingClientRect();
+           return {
+             left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+             width: rect.width, height: rect.height,
+             center: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+             dismissVisible: !root.querySelector('.site-dismiss').hidden,
+             vw: innerWidth, vh: innerHeight,
+             overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth
+           };
+         })()`
+      );
+
+      const mobileProblems = [];
+      if (geometry.right > geometry.vw + 0.5 || geometry.left < 0) mobileProblems.push('badge is clipped horizontally');
+      if (geometry.bottom > geometry.vh + 0.5 || geometry.top < 0) mobileProblems.push('badge is clipped vertically');
+      if (geometry.height < 30) mobileProblems.push(`badge tap target is only ${geometry.height}px tall`);
+      if (!geometry.dismissVisible) mobileProblems.push('per-site dismiss control missing');
+      if (geometry.overflow > 0) mobileProblems.push(`overlay causes ${geometry.overflow}px horizontal overflow`);
+
+      // Tap it like a finger would.
+      await client
+        .send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: geometry.center.x, y: geometry.center.y }] }, sessionId)
+        .catch(() => {});
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }, sessionId).catch(() => {});
+
+      const panel = await waitFor(
+        'panel opens on tap',
+        async () => {
+          const value = await evaluate(
+            sessionId,
+            `(() => {
+               const panel = document.getElementById('php-simple-check-badge').shadowRoot.querySelector('.panel');
+               if (panel.hidden) return null;
+               const rect = panel.getBoundingClientRect();
+               return {
+                 fitsX: rect.left >= 0 && rect.right <= innerWidth + 0.5,
+                 fitsY: rect.top >= 0 && rect.bottom <= innerHeight + 0.5,
+                 fitsContent: panel.scrollWidth <= panel.clientWidth + 1
+               };
+             })()`
+          );
+          return value && value.fitsX && value.fitsY && value.fitsContent ? value : null;
+        },
+        5000
+      ).catch(() => null);
+
+      if (!panel) mobileProblems.push('tapping the badge did not open a fully visible panel');
+
+      const dismissed = await evaluate(
+        sessionId,
+        `(() => {
+           const root = document.getElementById('php-simple-check-badge').shadowRoot;
+           root.querySelector('.site-dismiss').click();
+           const toast = document.querySelector('[data-php-simple-check-toast]');
+           return {
+             stored: window.localStorage.getItem('php-simple-check:hidden:' + location.hostname),
+             display: document.getElementById('php-simple-check-badge').style.display,
+             toast: Boolean(toast)
+           };
+         })()`
+      );
+      if (dismissed.stored !== '1') mobileProblems.push('per-site dismissal was not stored');
+      if (dismissed.display !== 'none') mobileProblems.push('badge stayed visible after dismissal');
+      if (!dismissed.toast) mobileProblems.push('undo toast did not appear');
+
+      const undone = await evaluate(
+        sessionId,
+        `(() => {
+           const toast = document.querySelector('[data-php-simple-check-toast]');
+           if (!toast || !toast.shadowRoot) return null;
+           toast.shadowRoot.querySelector('button').click();
+           return {
+             stored: window.localStorage.getItem('php-simple-check:hidden:' + location.hostname),
+             display: document.getElementById('php-simple-check-badge').style.display
+           };
+         })()`
+      );
+      if (!undone || undone.stored !== null) mobileProblems.push('undo did not clear the stored preference');
+      if (!undone || undone.display === 'none') mobileProblems.push('badge did not come back after undo');
+
+      if (mobileProblems.length) fail(`mobile: ${mobileProblems.join(', ')}`);
+      else log('✔ mobile 390x844: badge inside viewport, tap opens panel, per-site hide/undo works');
+
+      await client.send('Target.closeTarget', { targetId }).catch(() => {});
     }
 
     await evaluate(workerSession, 'chrome.storage.local.set({ overlayEnabled: true })');

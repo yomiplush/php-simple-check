@@ -52,26 +52,46 @@ php-simple-check-extension-v1.0.1/     ← これを選択する
 
 ### 2. iOS / iPadOS Safari（Userscripts アプリ）
 
-1. App Store で [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) をインストールします。
-2. **設定 › Safari › 機能拡張** で Userscripts を有効化し、サイトアクセスを「すべての Web サイトを許可」にします。
-3. Userscripts アプリを開き、スクリプトの保存先フォルダを設定します。
-4. 以下の URL を Safari で開くとインストール画面が出ます。
+1. App Store で [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) をインストールします（無料）。
+2. **設定 › Safari › 機能拡張 › Userscripts** を開き、機能拡張を **オン**、サイトアクセスを **許可**（または「すべての Web サイトを許可」）にします。
+3. Userscripts アプリを起動し、初回だけスクリプトの保存先を選びます（iCloud Drive か「この iPhone 内」）。
+4. Safari で次の URL を開き、インストール画面の指示に従います。
 
    ```
    https://raw.githubusercontent.com/yomiplush/php-simple-check/main/userscript/php-simple-check.user.js
    ```
 
-5. サイトを開くと右下に 🔴 / 🟡 / 🟢 バッジが出ます。タップすると内訳が開きます。
+   アプリの「＋」→「リモートから追加」に同じ URL を貼っても登録できます。以後は `@updateURL` で更新できます。
+5. サイトを開くと右下に 🔴 / 🟡 / 🟢 バッジが出ます。タップすると内訳パネルが開きます。
 
 macOS の Safari でも同じ手順で使えます。
 
+> **バッジが出ないとき**
+> - 設定 › Safari › 機能拡張 で Userscripts がオンになっているか
+> - Userscripts アプリ内でスクリプトが有効（トグルON）か
+> - ページを再読み込みしたか（`http://` / `https://` のページのみ対象）
+> - プライベートブラウズでは拡張が無効になることがあります
+> - 以前「このサイトでは表示しない」を押した場合は、下記の「元に戻す」で復帰できます
+
 ### 3. Android Firefox（Tampermonkey）
 
-1. Firefox for Android に [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/) を追加します。
-2. 上と同じ `php-simple-check.user.js` の URL を開き、Tampermonkey のインストール画面で **インストール** を押します。
-3. サイトを開くと右下にバッジが出ます。
+1. Firefox for Android（120 以降）をインストールします。
+2. [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/) を Firefox に追加します（設定 › 拡張機能 から、または AMO のページから）。
+3. 上と同じ `php-simple-check.user.js` の URL を Firefox で開き、Tampermonkey のインストール画面で **インストール** を押します。
+4. Tampermonkey のダッシュボード（拡張機能アイコン → ダッシュボード）でスクリプトが **有効** になっていることを確認します。
+5. サイトを開くと右下にバッジが出ます。更新はダッシュボードの「ユーザースクリプトを更新」から。
 
-> Android Chrome は拡張機能・ユーザースクリプトの実行に対応していないため対象外です（Firefox か Chromium 系の拡張対応ブラウザを使ってください）。
+> Android Chrome は拡張機能・ユーザースクリプトに対応していないため対象外です。iOS も Safari（＋Userscripts）のみで、Chrome for iOS では動作しません。
+
+### モバイルでの操作
+
+| 操作 | 動き |
+| --- | --- |
+| 右下のバッジをタップ | 判定の内訳パネルを開閉 |
+| パネルの ✕ | このページ表示の間だけ閉じる（再読み込みで戻る） |
+| パネルの「このサイトでは表示しない」 | そのホストでは今後バッジを出さない（8 秒間「元に戻す」が出ます） |
+
+非表示にした設定は端末内の `localStorage`（ホスト単位）にだけ保存されます。元に戻すには、バッジを消した直後の「元に戻す」を押すか、Safari の「Web サイトデータを消去」でリセットしてください。
 
 ---
 
@@ -160,6 +180,7 @@ E2E では次のフィクスチャを用意し、拡張・ユーザースクリ�
 - `X-Powered-By: PHP` + `PHPSESSID` + `/wp-content/` → 🔴
 - `X-Powered-By: PHP` だけ（HTML に痕跡なし）→ 🔴（ヘッダ取得経路の検証）
 - `/header-only/` → `/static/` への同一タブ遷移 → 前ページの証拠を引きずらず 🟢 になること
+- モバイル（390×844・タッチ）: バッジが画面内に収まり、タップでパネルが開き、「このサイトでは表示しない」→ 保存 →「元に戻す」が動くこと
 
 ### ディレクトリ構成
 

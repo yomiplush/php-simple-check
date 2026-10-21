@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      1.0.1
+// @version      1.1.0
 // @description  読み込んだサイトのレスポンスヘッダー・Cookie・DOM から、PHP が使われているかを簡易判定します（🔴 PHP / 🟢 非 PHP）。
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.0.1';
+  var VERSION = '1.1.0';
 
   var VERDICTS = {
     php: {
@@ -752,11 +752,11 @@
     ':host{all:initial}',
     '*{box-sizing:border-box}',
     '.wrap{display:flex;flex-direction:column;align-items:flex-end;gap:8px;font:400 12px/1.45 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;color:#111}',
-    '.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid #d0d7de;background:#fff;color:#111;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:transform .12s ease,box-shadow .12s ease}',
+    '.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid #d0d7de;background:#fff;color:#111;font:inherit;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:transform .12s ease,box-shadow .12s ease}',
     '.badge:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.24)}',
     '.badge:focus-visible{outline:2px solid #0969da;outline-offset:2px}',
     '.badge-emoji{font-size:13px;line-height:1}',
-    '.panel{width:min(340px,calc(100vw - 32px));max-height:min(60vh,520px);overflow:auto;padding:12px;border-radius:12px;border:1px solid #d0d7de;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.22)}',
+    '.panel{width:min(340px,calc(100vw - 32px));max-height:min(60vh,520px);overflow:auto;overscroll-behavior:contain;padding:12px;border-radius:12px;border:1px solid #d0d7de;background:#fff;box-shadow:0 8px 28px rgba(0,0,0,.22)}',
     '.panel[hidden]{display:none}',
     '.panel-head{display:flex;align-items:center;gap:6px;margin:0 0 6px}',
     '.panel-emoji{font-size:16px;line-height:1}',
@@ -777,6 +777,19 @@
     '.facts dd{margin:0;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
     '.facts:empty{display:none}',
     '.note{margin:0;font-size:10px;line-height:1.5;color:#6e7781}',
+    '.site-dismiss{display:block;width:100%;margin:0 0 8px;padding:7px 8px;border:1px solid #d0d7de;border-radius:8px;background:transparent;color:#57606a;font:inherit;font-size:11px;cursor:pointer}',
+    '.site-dismiss:hover{background:#f3f4f6;color:#111}',
+    '.site-dismiss[hidden]{display:none}',
+    /* Phones / tablets: bigger tap targets and a taller scrollable panel. */
+    '@media (pointer:coarse){',
+    '.badge{padding:8px 13px;font-size:13px}',
+    '.badge-emoji{font-size:15px}',
+    '.panel{width:min(360px,calc(100vw - 24px));max-height:min(70vh,560px);padding:14px}',
+    '.close{font-size:20px;padding:6px 8px}',
+    '.signal-label{font-size:12px}',
+    '.signal-detail{font-size:11px}',
+    '.site-dismiss{padding:10px 8px;font-size:12px}',
+    '}',
     '@media (prefers-color-scheme:dark){',
     '.wrap{color:#e6edf3}',
     '.badge{background:#161b22;color:#e6edf3;border-color:#30363d}',
@@ -787,6 +800,8 @@
     '.facts dd{color:#8b949e}',
     '.close{color:#8b949e}',
     '.close:hover{background:#21262d;color:#e6edf3}',
+    '.site-dismiss{color:#8b949e;border-color:#30363d}',
+    '.site-dismiss:hover{background:#21262d;color:#e6edf3}',
     '}'
   ].join('\n');
 
@@ -795,7 +810,8 @@
     refs: null,
     result: null,
     hidden: false,
-    onClose: null
+    onClose: null,
+    onSiteDismiss: null
   };
 
   function el(tag, className, text) {
@@ -810,9 +826,18 @@
 
     var host = el('div');
     host.id = HOST_ID;
+    // Sit a little higher on touch devices so Safari's bottom bar does not
+    // cover the badge.
+    var coarsePointer = false;
+    try {
+      coarsePointer = Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    } catch (error) {
+      coarsePointer = false;
+    }
+    var offset = coarsePointer ? 26 : 16;
     host.style.cssText =
-      'all:initial;position:fixed;right:calc(16px + env(safe-area-inset-right, 0px));' +
-      'bottom:calc(16px + env(safe-area-inset-bottom, 0px));z-index:2147483647;display:block;';
+      'all:initial;position:fixed;right:calc(' + offset + 'px + env(safe-area-inset-right, 0px));' +
+      'bottom:calc(' + offset + 'px + env(safe-area-inset-bottom, 0px));z-index:2147483647;display:block;';
     var shadow = host.attachShadow({ mode: 'open' });
 
     var style = el('style');
@@ -844,10 +869,19 @@
     var facts = el('dl', 'facts');
     var note = el('p', 'note', 'クライアント側で観測できるのは「兆候」だけです。PHP がサーバー内部で動いていても、応答に痕跡が出ない場合は 🟢 になります。');
 
+    var siteDismiss = el('button', 'site-dismiss', 'このサイトでは表示しない');
+    siteDismiss.type = 'button';
+    siteDismiss.hidden = true;
+    siteDismiss.addEventListener('click', function () {
+      hide();
+      if (state.onSiteDismiss) state.onSiteDismiss();
+    });
+
     panel.appendChild(head);
     panel.appendChild(summary);
     panel.appendChild(list);
     panel.appendChild(facts);
+    panel.appendChild(siteDismiss);
     panel.appendChild(note);
 
     var badge = el('button', 'badge');
@@ -878,6 +912,7 @@
       summary: summary,
       list: list,
       facts: facts,
+      siteDismiss: siteDismiss,
       badge: badge,
       badgeEmoji: badgeEmoji,
       badgeLabel: badgeLabel
@@ -931,10 +966,16 @@
     });
   }
 
-  function render(result) {
+  function render(result, options) {
     if (!result || !result.verdict) return;
     var refs = ensure();
     state.result = result;
+    if (options && (options.onSiteDismiss || options.allowSiteDismiss)) {
+      state.onSiteDismiss = options.onSiteDismiss || null;
+      refs.siteDismiss.hidden = false;
+    } else {
+      refs.siteDismiss.hidden = true;
+    }
     if (state.hidden) {
       state.host.style.display = 'none';
       return;
@@ -992,14 +1033,89 @@
  *
  * Response headers are the only signal a userscript cannot read from the
  * document, so we make one extra same-origin HEAD request for them.
+ *
+ * Mobile extras:
+ *   - "このサイトでは表示しない" is remembered per hostname in localStorage
+ *     (with an undo toast), because on a phone there is no other way to get the
+ *     badge out of the way.
  */
 (function () {
   'use strict';
 
   var RECHECK_DELAYS = [2500, 6000];
+  var HIDDEN_PREFIX = 'php-simple-check:hidden:';
+
   var lastHref = location.href;
   var probed = false;
   var probedHeaders = null;
+
+  /* ---------------------------------------------------------- per-site hide */
+
+  function hiddenKey() {
+    return HIDDEN_PREFIX + location.hostname;
+  }
+
+  function isHidden() {
+    try {
+      return window.localStorage.getItem(hiddenKey()) === '1';
+    } catch (error) {
+      return false; /* private mode / storage disabled */
+    }
+  }
+
+  function setHidden(hidden) {
+    try {
+      if (hidden) window.localStorage.setItem(hiddenKey(), '1');
+      else window.localStorage.removeItem(hiddenKey());
+    } catch (error) {
+      /* ignore */
+    }
+  }
+
+  function showToast(message, actionLabel, onAction) {
+    var host = document.createElement('div');
+    host.setAttribute('data-php-simple-check-toast', '');
+    host.style.cssText =
+      'all:initial;position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom, 0px));' +
+      'transform:translateX(-50%);z-index:2147483647;';
+    var shadow = host.attachShadow({ mode: 'open' });
+
+    var style = document.createElement('style');
+    style.textContent =
+      '.toast{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;' +
+      'background:#1f2937;color:#f9fafb;box-shadow:0 6px 22px rgba(0,0,0,.3);' +
+      'font:400 12px/1.4 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;' +
+      'max-width:calc(100vw - 32px)}' +
+      '.toast button{border:0;background:transparent;color:#93c5fd;font:inherit;font-weight:700;' +
+      'cursor:pointer;padding:6px;touch-action:manipulation}';
+
+    var box = document.createElement('div');
+    box.className = 'toast';
+    var text = document.createElement('span');
+    text.textContent = message;
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = actionLabel;
+    button.addEventListener('click', function () {
+      cleanup();
+      onAction();
+    });
+
+    box.appendChild(text);
+    box.appendChild(button);
+    shadow.appendChild(style);
+    shadow.appendChild(box);
+    document.documentElement.appendChild(host);
+
+    var timer = setTimeout(cleanup, 8000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      if (host.parentNode) host.parentNode.removeChild(host);
+    }
+  }
+
+  /* ------------------------------------------------------------- header probe */
 
   function probeHeaders() {
     if (probed) return Promise.resolve(probedHeaders);
@@ -1024,7 +1140,11 @@
     });
   }
 
+  /* --------------------------------------------------------------------- run */
+
   function run() {
+    if (isHidden()) return;
+
     var payload;
     try {
       payload = PHPSimpleCheckDom.collect();
@@ -1045,11 +1165,22 @@
         return;
       }
       lastHref = payload.url;
+
       try {
-        PHPSimpleCheckOverlay.render(result);
+        PHPSimpleCheckOverlay.render(result, {
+          onSiteDismiss: function () {
+            setHidden(true);
+            showToast('このサイトではバッジを表示しません', '元に戻す', function () {
+              setHidden(false);
+              PHPSimpleCheckOverlay.show();
+              run();
+            });
+          }
+        });
       } catch (error) {
         /* overlay is cosmetic */
       }
+
       window.dispatchEvent(new CustomEvent('php-simple-check:result', { detail: result }));
     });
   }
@@ -1066,6 +1197,7 @@
 
   // Single-page apps swap content without a reload: re-evaluate on URL change.
   setInterval(function () {
+    if (document.hidden) return; // keep mobile battery usage low
     if (location.href === lastHref) return;
     lastHref = location.href;
     setTimeout(run, 800);
