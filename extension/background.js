@@ -31,10 +31,74 @@ const MAX_TRACKED_TABS = 60;
  * The store package is generated without the code for the disabled features.
  */
 const DECLARED_PERMISSIONS = chrome.runtime.getManifest().permissions || [];
+const DECLARED_MANIFEST = chrome.runtime.getManifest();
 const CAPABILITIES = {
   cookies: DECLARED_PERMISSIONS.indexOf('cookies') !== -1,
-  guard: DECLARED_PERMISSIONS.indexOf('declarativeNetRequest') !== -1
+  guard: DECLARED_PERMISSIONS.indexOf('declarativeNetRequest') !== -1,
+  scripting: DECLARED_PERMISSIONS.indexOf('scripting') !== -1,
+  // True when the manifest ships declarative content scripts (GitHub build).
+  // False in the store build, which registers them only after the user grants
+  // the optional host permission ("Enable automatic verdicts").
+  declarative: (DECLARED_MANIFEST.content_scripts || []).length > 0
 };
+
+const HOST_ORIGINS = ['http://*/*', 'https://*/*'];
+const STORE_EXCLUDE = ['https://chrome.google.com/webstore/*', 'https://chromewebstore.google.com/*'];
+const AUTO_SCRIPT_ID = 'php-simple-check';
+const CONTENT_SCRIPT_FILES = [
+  'lib/detector.js',
+  'lib/i18n-data.js',
+  'lib/i18n.js',
+  'lib/collect-dom.js',
+  'lib/overlay.js',
+  'content.js'
+];
+
+async function autoScanGranted() {
+  if (!CAPABILITIES.scripting) return false;
+  try {
+    return await chrome.permissions.contains({ origins: HOST_ORIGINS });
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Store build only: keep the dynamically registered content scripts in sync with
+ * the optional host permission. With the permission granted the behaviour is
+ * identical to the declarative build; without it nothing is injected until the
+ * user scans a tab on demand.
+ */
+async function syncAutoScan() {
+  if (!CAPABILITIES.scripting) return;
+
+  const granted = await autoScanGranted();
+  let registered = [];
+  try {
+    registered = await chrome.scripting.getRegisteredContentScripts({ ids: [AUTO_SCRIPT_ID] });
+  } catch (error) {
+    registered = [];
+  }
+
+  try {
+    if (granted && registered.length === 0) {
+      await chrome.scripting.registerContentScripts([
+        {
+          id: AUTO_SCRIPT_ID,
+          matches: HOST_ORIGINS,
+          excludeMatches: STORE_EXCLUDE,
+          js: CONTENT_SCRIPT_FILES,
+          runAt: 'document_idle',
+          allFrames: false
+        }
+      ]);
+    } else if (!granted && registered.length > 0) {
+      await chrome.scripting.unregisterContentScripts({ ids: [AUTO_SCRIPT_ID] });
+    }
+  } catch (error) {
+    console.error('[PHP Simple Check] could not sync automatic scanning', error);
+  }
+}
 
 /** The action icon itself shows the verdict, so the toolbar reads at a glance. */
 const STATUS_ICONS = {
@@ -388,6 +452,48 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     return true;
   }
 
+  if (type === 'php-simple-check:get-auto-scan') {
+    (async function () {
+      if (CAPABILITIES.declarative) {
+        sendResponse({ ok: true, autoScan: { supported: false, granted: true } });
+        return;
+      }
+      sendResponse({ ok: true, autoScan: { supported: true, granted: await autoScanGranted() } });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:sync-auto-scan') {
+    (async function () {
+      await syncAutoScan();
+      sendResponse({
+        ok: true,
+        autoScan: {
+          supported: !CAPABILITIES.declarative,
+          granted: CAPABILITIES.declarative ? true : await autoScanGranted()
+        }
+      });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:inject') {
+    const tabId = message.tabId;
+    (async function () {
+      if (!CAPABILITIES.scripting || tabId == null) {
+        sendResponse({ ok: false, error: 'unsupported' });
+        return;
+      }
+      try {
+        await chrome.scripting.executeScript({ target: { tabId: tabId }, files: CONTENT_SCRIPT_FILES });
+        sendResponse({ ok: true });
+      } catch (error) {
+        sendResponse({ ok: false, error: String(error && error.message ? error.message : error) });
+      }
+    })();
+    return true;
+  }
+
   if (type === 'php-simple-check:rescan') {
     const tabId = message.tabId;
     (async function () {
@@ -520,6 +626,7 @@ chrome.runtime.onInstalled.addListener(function () {
     // @store-strip-start
     await syncGuardRules();
     // @store-strip-end
+    await syncAutoScan();
   })();
 });
 
@@ -527,4 +634,16 @@ chrome.runtime.onStartup.addListener(function () {
   // @store-strip-start
   void syncGuardRules();
   // @store-strip-end
+  void syncAutoScan();
 });
+
+try {
+  chrome.permissions.onAdded.addListener(function () {
+    void syncAutoScan();
+  });
+  chrome.permissions.onRemoved.addListener(function () {
+    void syncAutoScan();
+  });
+} catch (error) {
+  /* the permissions API is always present, but be defensive */
+}

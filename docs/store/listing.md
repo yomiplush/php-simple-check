@@ -49,6 +49,11 @@ After a page loads, the extension inspects signals that are already available to
 the page itself — response headers, cookies the page can read, URLs, and markup —
 then shows one of three verdicts:
 
+Getting started: on first install, press "Enable automatic verdicts" in the popup
+once to allow page access. Until you do, clicking the toolbar icon scans the
+current page on demand. You can revoke the permission at any time in Chrome's
+extension settings.
+
   🔴 PHP usage detected
   🟡 Possibly PHP (weak signals only)
   🟢 No PHP signals found
@@ -66,9 +71,10 @@ Privacy first
 • No servers, no analytics, no accounts. Everything is computed on your device.
 • The only network request is a HEAD request to the page you already opened, used
   to read its own response headers. Nothing is sent to us or to third parties.
-• The store build requests a single permission: storage (for your badge preference
-  and per-site choices). It has no host permissions, reads no cookies through
-  browser APIs, intercepts no network traffic, and ships no remote code.
+• The store build asks for no site access at install. It requests the optional
+  host permission only when you press "Enable automatic verdicts", holds only
+  storage/activeTab/scripting API permissions, reads no cookies through browser
+  APIs, intercepts no network traffic, and ships no remote code.
 • Google Chrome Web Store Limited Use: no data is sold, transferred or used for
   purposes unrelated to this single purpose, and none of it is used for
   creditworthiness or lending.
@@ -147,6 +153,12 @@ PHP Simple Check は、いま見ているページが PHP で動いているか�
 
 結果は 4 か所に出ます。ツールバーのアイコンが判定色に変わり、小さなバッジが
 PHP / ? / OK を表示し、ページ右下のバッジとポップアップで根拠を確認できます。
+
+はじめに
+• 初回インストール時、ポップアップの「自動判定を有効にする」を一度押すと、
+  ページを開いた時点で判定が表示されます。押すまでは、ツールバーアイコンを
+  クリックしたページだけを判定します。許可は Chrome の拡張機能設定でいつでも
+  取り消せます。
 
 プライバシー
 • サーバー・解析・アカウントはありません。判定はすべて端末内で完結します。

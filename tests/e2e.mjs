@@ -274,15 +274,19 @@ async function main() {
     const workerSession = worker.sessionId;
     log(`extension service worker is running (${worker.url.split('/')[2]})`);
 
-    const capabilities = await evaluate(
+    const manifestInfo = await evaluate(
       workerSession,
       `({
          guard: Boolean(chrome.declarativeNetRequest),
          cookies: Boolean(chrome.cookies),
          permissions: chrome.runtime.getManifest().permissions,
-         hostPermissions: chrome.runtime.getManifest().host_permissions || []
+         hostPermissions: chrome.runtime.getManifest().host_permissions || [],
+         optionalHosts: chrome.runtime.getManifest().optional_host_permissions || [],
+         declarativeScripts: (chrome.runtime.getManifest().content_scripts || []).length
        })`
     );
+    const capabilities = manifestInfo;
+    const storeMode = manifestInfo.declarativeScripts === 0;
     log(
       `capabilities: ${JSON.stringify(capabilities.permissions)}` +
       ` guard=${capabilities.guard} cookies=${capabilities.cookies}`
@@ -290,14 +294,17 @@ async function main() {
 
     if (process.env.EXPECT_MINIMAL === '1') {
       const minimalProblems = [];
-      if (JSON.stringify(capabilities.permissions) !== JSON.stringify(['storage'])) {
+      if (
+        JSON.stringify(capabilities.permissions) !==
+        JSON.stringify(['storage', 'activeTab', 'scripting'])
+      ) {
         minimalProblems.push(`permissions ${JSON.stringify(capabilities.permissions)}`);
       }
       if (capabilities.hostPermissions.length) minimalProblems.push('host permissions present');
       if (capabilities.guard) minimalProblems.push('guard capability present');
       if (capabilities.cookies) minimalProblems.push('cookies capability present');
       if (minimalProblems.length) fail(`minimal build: ${minimalProblems.join(', ')}`);
-      else log('✔ minimal build: permissions are exactly ["storage"], no host access');
+      else log('✔ minimal build: permissions are exactly ["storage", "activeTab", "scripting"], no host access');
     }
 
     // Cookies are per-host, not per-document: clear them so each fixture is
@@ -307,7 +314,48 @@ async function main() {
       await client.send('Network.clearBrowserCookies', {}, sessionId).catch(() => {});
     }
 
-    for (const testCase of CASES) {
+    if (storeMode) {
+      // The store build asks for site access on demand, so automatic verdicts
+      // are verified in the declarative (GitHub) build; here we check the
+      // opt-in surface and that nothing is pre-granted.
+      const granted = await evaluate(
+        workerSession,
+        `chrome.permissions.contains({ origins: ['http://*/*', 'https://*/*'] })`
+      );
+      const registered = await evaluate(workerSession, 'chrome.scripting.getRegisteredContentScripts()');
+      if (granted) fail('store build starts with host access already granted');
+      if (registered.length) fail('store build registered content scripts before opt-in');
+
+      const { id: extensionId } = await evaluate(workerSession, '({ id: chrome.runtime.id })');
+      const popupUrl = `chrome-extension://${extensionId}/popup.html`;
+      const popupTarget = await client.send('Target.createTarget', { url: popupUrl });
+      const { sessionId: popupSession } = await client.send('Target.attachToTarget', {
+        targetId: popupTarget.targetId,
+        flatten: true
+      });
+
+      const optIn = await waitFor('auto-scan opt-in UI', async () => {
+        const value = await evaluate(
+          popupSession,
+          `(() => {
+             const section = document.getElementById('autoscan-section');
+             const button = document.getElementById('autoscan-enable');
+             if (!section || !button) return null;
+             return { visible: !section.hidden, buttonVisible: !button.hidden, label: button.textContent };
+           })()`
+        );
+        return value && value.visible ? value : null;
+      }, 8000).catch(() => null);
+
+      if (!optIn) fail('store popup does not offer the automatic-scan opt-in');
+      else if (!optIn.buttonVisible) fail('store popup hides the enable button');
+      else log(`✔ store build: site access is opt-in ("${optIn.label.trim()}")`);
+
+      await client.send('Target.closeTarget', { targetId: popupTarget.targetId }).catch(() => {});
+      log('· automatic verdicts are exercised by the declarative (GitHub) build run');
+    }
+
+    for (const testCase of storeMode ? [] : CASES) {
       const url = origin + testCase.path;
       const { targetId } = await client.send('Target.createTarget', { url });
       const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true });
@@ -397,6 +445,7 @@ async function main() {
     else log(`✔ toolbar icons packaged (${Object.keys(iconFiles).length} files)`);
 
     // ---- cold service worker: no stale evidence after a navigation ---------
+    if (!storeMode) {
     const navCase = await client.send('Target.createTarget', { url: origin + '/header-only/' });
     const { sessionId: navSession } = await client.send('Target.attachToTarget', {
       targetId: navCase.targetId,
@@ -454,6 +503,7 @@ async function main() {
       log('✔ navigation /header-only/ → /static/ re-evaluated to 🟢 (no stale evidence)');
     }
     await client.send('Target.closeTarget', { targetId: navCase.targetId }).catch(() => {});
+    }
 
     // ---- userscript path (Safari Userscripts / Tampermonkey) ----------------
     // The content script would paint the same badge, so turn its overlay off and

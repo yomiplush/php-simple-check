@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check (Android)
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      2.2.1
+// @version      2.3.0
 // @description  For Firefox on Android (Tampermonkey). Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP).
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '2.2.1';
+  var VERSION = '2.3.0';
 
   var VERDICTS = {
     php: {
@@ -584,6 +584,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "الفحص من جانب العميل يرى الإشارات فقط. إذا كان PHP يعمل دون أثر في الاستجابة فستبقى النتيجة 🟢.",
     "overlay.summary": "النقاط {score} · إشارات PHP {count}",
     "popup.allowed": "مسموحة",
+    "popup.autoScanBody": "اسمح بالوصول إلى الصفحات التي تزورها ليظهر التقييم فور تحميل الصفحة. يمكنك إلغاء ذلك في أي وقت من إعدادات الإضافات في Chrome.",
+    "popup.autoScanEnable": "تفعيل النتائج التلقائية",
+    "popup.autoScanEnabled": "النتائج التلقائية مفعّلة",
+    "popup.autoScanTitle": "النتائج التلقائية",
     "popup.blockAgain": "حجب مرة أخرى",
     "popup.blocked": "محجوبة",
     "popup.copied": "تم النسخ",
@@ -643,6 +647,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Clientseitige Prüfungen sehen nur Signale. Läuft PHP ohne Spuren in der Antwort, bleibt das Ergebnis 🟢.",
     "overlay.summary": "Punkte {score} · {count} PHP-Signale",
     "popup.allowed": "Erlaubt",
+    "popup.autoScanBody": "Erlaube den Zugriff auf besuchte Seiten, damit das Ergebnis beim Laden erscheint. Du kannst die Berechtigung jederzeit in den Chrome-Erweiterungseinstellungen widerrufen.",
+    "popup.autoScanEnable": "Automatische Ergebnisse aktivieren",
+    "popup.autoScanEnabled": "Automatische Ergebnisse sind aktiv",
+    "popup.autoScanTitle": "Automatische Ergebnisse",
     "popup.blockAgain": "Wieder blockieren",
     "popup.blocked": "Blockiert",
     "popup.copied": "Kopiert",
@@ -702,6 +710,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Client-side checks only see signals. If PHP runs without leaving traces in the response, the result stays 🟢.",
     "overlay.summary": "Score {score} · {count} PHP signals",
     "popup.allowed": "Allowed",
+    "popup.autoScanBody": "Allow access to the pages you visit so the verdict appears as soon as a page loads. You can revoke it at any time in Chrome's extension settings.",
+    "popup.autoScanEnable": "Enable automatic verdicts",
+    "popup.autoScanEnabled": "Automatic verdicts are on",
+    "popup.autoScanTitle": "Automatic verdicts",
     "popup.blockAgain": "Block again",
     "popup.blocked": "Blocked",
     "popup.copied": "Copied",
@@ -761,6 +773,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Las comprobaciones del lado del cliente solo ven señales. Si PHP se ejecuta sin dejar rastro, el resultado sigue siendo 🟢.",
     "overlay.summary": "Puntuación {score} · {count} señales de PHP",
     "popup.allowed": "Permitidos",
+    "popup.autoScanBody": "Permite el acceso a las páginas que visitas para que el veredicto aparezca al cargar la página. Puedes revocarlo cuando quieras en los ajustes de extensiones de Chrome.",
+    "popup.autoScanEnable": "Activar veredictos automáticos",
+    "popup.autoScanEnabled": "Los veredictos automáticos están activos",
+    "popup.autoScanTitle": "Veredictos automáticos",
     "popup.blockAgain": "Bloquear de nuevo",
     "popup.blocked": "Bloqueados",
     "popup.copied": "Copiado",
@@ -820,6 +836,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Une vérification côté client ne voit que des signaux. Si PHP s’exécute sans laisser de trace, le résultat reste 🟢.",
     "overlay.summary": "Score {score} · {count} signaux PHP",
     "popup.allowed": "Autorisés",
+    "popup.autoScanBody": "Autorisez l’accès aux pages que vous visitez pour que le verdict apparaisse dès le chargement. Vous pouvez le révoquer à tout moment dans les paramètres des extensions de Chrome.",
+    "popup.autoScanEnable": "Activer les verdicts automatiques",
+    "popup.autoScanEnabled": "Les verdicts automatiques sont activés",
+    "popup.autoScanTitle": "Verdicts automatiques",
     "popup.blockAgain": "Bloquer à nouveau",
     "popup.blocked": "Bloqués",
     "popup.copied": "Copié",
@@ -879,6 +899,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "क्लाइंट-साइड जाँच केवल संकेत देखती है। अगर PHP बिना निशान छोड़े चल रहा हो तो परिणाम 🟢 ही रहेगा।",
     "overlay.summary": "स्कोर {score} · {count} PHP संकेत",
     "popup.allowed": "अनुमत",
+    "popup.autoScanBody": "जिन पेजों पर आप जाते हैं उन तक पहुँच की अनुमति दें ताकि पेज खुलते ही परिणाम दिखे। आप इसे Chrome की एक्सटेंशन सेटिंग्स में कभी भी रद्द कर सकते हैं।",
+    "popup.autoScanEnable": "स्वचालित परिणाम चालू करें",
+    "popup.autoScanEnabled": "स्वचालित परिणाम चालू हैं",
+    "popup.autoScanTitle": "स्वचालित परिणाम",
     "popup.blockAgain": "फिर ब्लॉक करें",
     "popup.blocked": "ब्लॉक किए गए",
     "popup.copied": "कॉपी हुआ",
@@ -938,6 +962,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "クライアント側で観測できるのは「兆候」だけです。応答に痕跡が出ない場合は 🟢 になります。",
     "overlay.summary": "スコア {score} ・ PHP の手がかり {count} 件",
     "popup.allowed": "許可済み",
+    "popup.autoScanBody": "閲覧したページへのアクセスを許可すると、ページを開いた時点で判定が表示されます。Chrome の拡張機能設定からいつでも取り消せます。",
+    "popup.autoScanEnable": "自動判定を有効にする",
+    "popup.autoScanEnabled": "自動判定は有効です",
+    "popup.autoScanTitle": "自動判定",
     "popup.blockAgain": "ブロックに戻す",
     "popup.blocked": "ブロック中",
     "popup.copied": "コピーしました",
@@ -997,6 +1025,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "클라이언트에서는 징후만 볼 수 있습니다. 응답에 흔적이 없으면 결과는 🟢입니다.",
     "overlay.summary": "점수 {score} · PHP 신호 {count}개",
     "popup.allowed": "허용됨",
+    "popup.autoScanBody": "방문하는 페이지에 대한 접근을 허용하면 페이지가 열릴 때 판정이 표시됩니다. Chrome 확장 프로그램 설정에서 언제든지 취소할 수 있습니다.",
+    "popup.autoScanEnable": "자동 판정 사용",
+    "popup.autoScanEnabled": "자동 판정이 켜져 있습니다",
+    "popup.autoScanTitle": "자동 판정",
     "popup.blockAgain": "다시 차단",
     "popup.blocked": "차단됨",
     "popup.copied": "복사됨",
@@ -1056,6 +1088,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Verificações no cliente só veem sinais. Se o PHP rodar sem deixar rastros na resposta, o resultado continua 🟢.",
     "overlay.summary": "Pontuação {score} · {count} sinais de PHP",
     "popup.allowed": "Permitidos",
+    "popup.autoScanBody": "Permita o acesso às páginas que você visita para que o veredicto apareça assim que a página carregar. Você pode revogar isso a qualquer momento nas configurações de extensões do Chrome.",
+    "popup.autoScanEnable": "Ativar veredictos automáticos",
+    "popup.autoScanEnabled": "Os veredictos automáticos estão ativos",
+    "popup.autoScanTitle": "Veredictos automáticos",
     "popup.blockAgain": "Bloquear novamente",
     "popup.blocked": "Bloqueados",
     "popup.copied": "Copiado",
@@ -1115,6 +1151,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "Клиентская проверка видит только признаки. Если PHP работает без следов в ответе, результат останется 🟢.",
     "overlay.summary": "Баллы {score} · признаков PHP: {count}",
     "popup.allowed": "Разрешены",
+    "popup.autoScanBody": "Разрешите доступ к посещаемым страницам, чтобы результат появлялся сразу при загрузке. Отозвать разрешение можно в настройках расширений Chrome.",
+    "popup.autoScanEnable": "Включить автоматическую проверку",
+    "popup.autoScanEnabled": "Автоматическая проверка включена",
+    "popup.autoScanTitle": "Автоматическая проверка",
     "popup.blockAgain": "Заблокировать снова",
     "popup.blocked": "Заблокированы",
     "popup.copied": "Скопировано",
@@ -1174,6 +1214,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "客户端只能观测到迹象。若响应中没有痕迹，结果仍为 🟢。",
     "overlay.summary": "分数 {score} · PHP 信号 {count} 个",
     "popup.allowed": "已允许",
+    "popup.autoScanBody": "允许访问你浏览的页面后，判定会在页面加载时立即显示。你可以随时在 Chrome 的扩展程序设置中撤销。",
+    "popup.autoScanEnable": "启用自动判定",
+    "popup.autoScanEnabled": "自动判定已启用",
+    "popup.autoScanTitle": "自动判定",
     "popup.blockAgain": "重新阻止",
     "popup.blocked": "已阻止",
     "popup.copied": "已复制",
@@ -1233,6 +1277,10 @@ var PHPSimpleCheckStrings = {
     "overlay.note": "用戶端只能觀測到跡象。若回應中沒有痕跡，結果仍為 🟢。",
     "overlay.summary": "分數 {score} · PHP 訊號 {count} 個",
     "popup.allowed": "已允許",
+    "popup.autoScanBody": "允許存取你瀏覽的頁面後，判定會在頁面載入時立即顯示。你可隨時在 Chrome 的擴充功能設定中撤銷。",
+    "popup.autoScanEnable": "啟用自動判定",
+    "popup.autoScanEnabled": "自動判定已啟用",
+    "popup.autoScanTitle": "自動判定",
     "popup.blockAgain": "重新封鎖",
     "popup.blocked": "已封鎖",
     "popup.copied": "已複製",

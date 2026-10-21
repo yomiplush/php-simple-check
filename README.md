@@ -49,8 +49,9 @@ If you are dealing with an active PHP-based compromise, use server-side scanning
 
 | | Store build (`dist/store/…`) | Full build (`extension/`) |
 | --- | --- | --- |
-| Permissions | `storage` only | `cookies`, `storage`, `declarativeNetRequest` |
-| Host permissions | none | `http://*/*`, `https://*/*` |
+| Permissions | `storage`, `activeTab`, `scripting` | `cookies`, `storage`, `declarativeNetRequest` |
+| Host permissions | none at install; `http://*/*` + `https://*/*` as an **optional** permission | `http://*/*`, `https://*/*` |
+| Content scripts | registered after the user enables automatic verdicts | declared in the manifest |
 | Response headers | via a same-origin `HEAD` request | same |
 | HttpOnly cookie names | no (`document.cookie` only) | yes (`chrome.cookies`) |
 | Guard mode (host blocking) | not included | included |
@@ -59,6 +60,8 @@ If you are dealing with an active PHP-based compromise, use server-side scanning
 | Intended for | Chrome Web Store | sideloading from GitHub |
 
 The two packages are generated from one source tree but share no unreachable features: source regions marked `@store-strip` are removed while building the store package, and the build syntax-checks the result. A reviewer opening the store zip finds no cookie, network-interception or blocking code, and no UI strings for features the build cannot run.
+
+**First run of the store build:** nothing is injected on any site until the user presses **Enable automatic verdicts** in the popup, which requests the optional host permission once. After that the behaviour is identical to the GitHub build (badge on page load, per-tab toolbar colour). Until then, clicking the toolbar icon scans just the current tab on demand via `activeTab`.
 
 Both builds are generated from the same sources; the worker checks for the APIs it needs at runtime (`CAPABILITIES`), so the store build simply hides the features it cannot support. The store build passes the same headless-Chrome end-to-end run:
 

@@ -17,7 +17,7 @@ npm run check:store
 | Policy requirement | How this item complies | Where to verify |
 | --- | --- | --- |
 | **Single purpose** | One function: report whether the current page is served by PHP from signals available to the page. No blocking, no history access, no accounts, no second feature. | `listing.md` (Single purpose), `manifest.json`, popup |
-| **Minimum permissions** | `permissions: ["storage"]`. No `host_permissions`, no `cookies`, no `webRequest`, no `declarativeNetRequest`, no `tabs`. | `npm run check:store`; `chrome.permissions.getAll()` returns `{permissions:["storage"]}` |
+| **Minimum permissions** | `permissions: ["storage","activeTab","scripting"]`; **no** `host_permissions`; the all-site origins are an *optional* permission the user grants from the popup ("Enable automatic verdicts"). No `cookies`, `webRequest`, `declarativeNetRequest` or `tabs`. | `npm run check:store` |
 | **No remote code** | All code is bundled, including all 12 translations. No `eval`, `new Function`, string timers, remote scripts/styles/fonts, source maps. | `check:store`; `grep` sweep in tests |
 | **User data / Limited Use** | No collection, storage or transmission of user data. No sale, no unrelated use, no creditworthiness use. | `docs/privacy-policy.html` (§ Limited Use) |
 | **Privacy policy** | Public, linked in the listing and in this repo. | <https://yomiplush.github.io/php-simple-check/privacy-policy.html> |
@@ -28,12 +28,23 @@ npm run check:store
 | **Readable code** | Plain, unminified JavaScript with comments. | package contents |
 | **Listing accuracy** | Screenshots are captured from the real store build (`npm run screenshots`). | `docs/store/screenshot-*.png` |
 
-## Why content-script access to all sites is required
+## Site access is opt-in
+
+The manifest declares **no** `host_permissions` and **no** content scripts. On
+install the extension can only scan the tab the user is looking at, and only
+after they click the toolbar icon (`activeTab`).
+
+Pressing **Enable automatic verdicts** in the popup requests
+`optional_host_permissions: ["http://*/*","https://*/*"]` once. When granted, the
+worker registers the same content script dynamically
+(`chrome.scripting.registerContentScripts`, Web Store excluded). That is what the
+declarative GitHub build does from the manifest, so behaviour is identical after
+the opt-in — and the user can revoke the permission at any time in Chrome's
+extension settings, after which the dynamic script is unregistered.
 
 The verdict is about *the page you are on*, so the observation code must run on
-whichever page you open. There is no narrower host pattern that would keep the
-feature working; the alternative (click the icon to scan) would change the
-current behaviour and still need the same access once invoked.
+whichever page you open; the opt-in is the narrowest way to offer that without
+requesting blanket access at install.
 
 What that access actually does:
 
@@ -73,6 +84,9 @@ longer review conversation; it is not a "minimal risk" submission.
 - hygiene: version match, no guard files, no userscripts/tests/source maps,
   no `eval`, no string timers, no remote URLs, no inline scripts or `on*`
   handlers, no `document.write`, no `innerHTML` assignment
+- permissions: no `host_permissions`, no declarative `content_scripts`,
+  `optional_host_permissions` limited to http(s), and the popup ships the opt-in
+  control
 - separation: no `chrome.cookies` / `chrome.declarativeNetRequest` /
   `blocked.html` / guard UI strings in the store bundle, no strip markers left
 - reviewer experience: popup present, `minimum_chrome_version`, `homepage_url`,

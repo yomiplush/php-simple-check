@@ -48,6 +48,20 @@
         <span class="copy-status" id="copy-status" hidden></span>
       </div>
 
+      <section class="block" id="autoscan-section" hidden>
+        <h2 data-i18n="popup.autoScanTitle">Automatic verdicts</h2>
+        <p class="guard-hint" data-i18n="popup.autoScanBody">
+          Allow access to the pages you visit so the verdict appears as soon as a page loads. You can
+          revoke it at any time in Chrome's extension settings.
+        </p>
+        <button type="button" id="autoscan-enable" class="secondary" data-i18n="popup.autoScanEnable">
+          Enable automatic verdicts
+        </button>
+        <p class="copy-status" id="autoscan-status" hidden data-i18n="popup.autoScanEnabled">
+          Automatic verdicts are on
+        </p>
+      </section>
+
       <!-- @store-strip-start -->
       <section class="block guard" id="guard-section" hidden>
         <h2 data-i18n="popup.guard">Guard mode</h2>

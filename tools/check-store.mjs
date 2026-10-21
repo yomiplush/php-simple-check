@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STORE_DIR = process.env.STORE_DIR || path.join(ROOT, 'dist', 'store', 'php-simple-check');
-const ALLOWED_PERMISSIONS = ['storage'];
+const ALLOWED_PERMISSIONS = ['storage', 'activeTab', 'scripting'];
 
 const problems = [];
 const notes = [];
@@ -79,17 +79,11 @@ async function main() {
   check('no optional_permissions', !manifest.optional_permissions);
   check('no web_accessible_resources', !manifest.web_accessible_resources);
   check('no "tabs" permission', !(manifest.permissions || []).includes('tabs'));
+  check('no declarative content scripts (site access is opt-in)', !manifest.content_scripts);
   check(
-    'content scripts only on http(s)',
-    (manifest.content_scripts || []).every((script) =>
-      script.matches.every((match) => match.startsWith('http://') || match.startsWith('https://'))
-    )
-  );
-  check(
-    'content scripts exclude the Web Store',
-    (manifest.content_scripts || []).some((script) =>
-      (script.exclude_matches || []).some((match) => match.includes('chromewebstore') || match.includes('chrome.google.com/webstore'))
-    )
+    'optional host permission covers http(s) only',
+    JSON.stringify(manifest.optional_host_permissions) === JSON.stringify(['http://*/*', 'https://*/*']),
+    JSON.stringify(manifest.optional_host_permissions)
   );
 
   process.stdout.write('\nRemote code and CSP\n');
@@ -167,6 +161,11 @@ async function main() {
     code.filter((file) => !file.name.endsWith('.html') && /\.innerHTML\s*=/.test(file.body)).map((file) => file.name).join(', ')
   );
   const joined = code.map((file) => file.body).join('\n');
+  check('worker registers the content script dynamically', joined.includes('registerContentScripts'));
+  check(
+    'dynamic registration excludes the Web Store',
+    joined.includes('chromewebstore.google.com') && joined.includes('chrome.google.com/webstore')
+  );
   check(
     'no cookie / DNR / guard code in the store bundle',
     !/chrome\.cookies|chrome\.declarativeNetRequest|blocked\.html|guardEnabled|php-simple-check:get-guard/.test(joined),

@@ -25,8 +25,8 @@ The store build differs from the GitHub build on purpose:
 
 | | Store build | GitHub build |
 | --- | --- | --- |
-| `permissions` | `["storage"]` | `["cookies", "storage", "declarativeNetRequest"]` |
-| `host_permissions` | none | `http://*/*`, `https://*/*` |
+| `permissions` | `["storage","activeTab","scripting"]` | `["cookies", "storage", "declarativeNetRequest"]` |
+| host access | optional, requested by the user ("Enable automatic verdicts") | `host_permissions` + declarative content scripts |
 | Guard mode (host blocking) | not included | included |
 | HttpOnly cookie names | no | yes |
 

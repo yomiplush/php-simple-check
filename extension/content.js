@@ -8,6 +8,15 @@
 (function () {
   'use strict';
 
+  // The store build injects this file on demand as well, so guard against
+  // running twice in the same frame.
+  try {
+    if (window.__phpSimpleCheckInjected) return;
+    window.__phpSimpleCheckInjected = true;
+  } catch (error) {
+    /* isolated worlds always expose window, but never break the page */
+  }
+
   const MESSAGE_DOM = 'php-simple-check:dom';
   const MESSAGE_RESULT = 'php-simple-check:result';
   const RECHECK_DELAYS = [2500, 6000];

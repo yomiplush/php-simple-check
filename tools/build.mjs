@@ -313,10 +313,14 @@ async function buildStoreExtension(manifest) {
   );
 
   const storeManifest = JSON.parse(JSON.stringify(manifest));
-  // The store build asks for the absolute minimum: local settings only.
-  storeManifest.permissions = ['storage'];
+  // The store build asks for no site access up front: it scans the current tab
+  // on demand (activeTab) and only registers content scripts for all sites after
+  // the user enables automatic verdicts (optional host permission).
+  storeManifest.permissions = ['storage', 'activeTab', 'scripting'];
+  storeManifest.optional_host_permissions = ['http://*/*', 'https://*/*'];
   delete storeManifest.host_permissions;
   delete storeManifest.web_accessible_resources;
+  delete storeManifest.content_scripts;
 
   await writeFile(path.join(storeDir, 'manifest.json'), `${JSON.stringify(storeManifest, null, 2)}\n`, 'utf8');
   return storeDir;

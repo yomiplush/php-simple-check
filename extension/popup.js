@@ -171,6 +171,37 @@
   }
 
   // @store-strip-end
+  function renderAutoScan(info) {
+    var supported = Boolean(info && info.supported);
+    els.autoScanSection.hidden = !supported;
+    if (!supported) return;
+    els.autoScanEnable.hidden = Boolean(info.granted);
+    els.autoScanStatus.hidden = !info.granted;
+  }
+
+  async function refreshAutoScan() {
+    var response = await send({ type: 'php-simple-check:get-auto-scan' });
+    renderAutoScan(response && response.autoScan);
+    return response && response.autoScan;
+  }
+
+  async function enableAutoScan() {
+    els.autoScanEnable.disabled = true;
+    try {
+      var granted = await chrome.permissions.request({
+        origins: ['http://*/*', 'https://*/*']
+      });
+      if (granted) {
+        await send({ type: 'php-simple-check:sync-auto-scan' });
+        await refreshAutoScan();
+        await rescan();
+      }
+    } catch (error) {
+      /* the user dismissed the prompt */
+    }
+    els.autoScanEnable.disabled = false;
+  }
+
   function renderEmpty(message) {
     els.emptySection.hidden = !message;
     els.emptyText.textContent = message || '';
@@ -187,7 +218,19 @@
   async function rescan() {
     if (activeTabId == null) return;
     setBusy(true);
+
     var response = await send({ type: 'php-simple-check:rescan', tabId: activeTabId });
+
+    // Store build without automatic scanning: inject the observer into the
+    // current tab (activeTab) and pick up the verdict it reports.
+    if (!response || !response.result) {
+      var injected = await send({ type: 'php-simple-check:inject', tabId: activeTabId });
+      if (injected && injected.ok) {
+        await new Promise(function (resolve) { setTimeout(resolve, 700); });
+        response = await send({ type: 'php-simple-check:get-result', tabId: activeTabId });
+      }
+    }
+
     setBusy(false);
     if (response && response.result) {
       render(response.result);
@@ -213,6 +256,9 @@
     els.rescan = $('rescan');
     els.copy = $('copy');
     els.copyStatus = $('copy-status');
+    els.autoScanSection = $('autoscan-section');
+    els.autoScanEnable = $('autoscan-enable');
+    els.autoScanStatus = $('autoscan-status');
     els.overlayToggle = $('overlay-toggle');
     // @store-strip-start
     els.guardSection = $('guard-section');
@@ -237,6 +283,10 @@
     }
 
     els.rescan.addEventListener('click', function () { void rescan(); });
+
+    els.autoScanEnable.addEventListener('click', function () {
+      void enableAutoScan();
+    });
 
     els.copy.addEventListener('click', function () {
       if (!lastResult) return;
@@ -275,6 +325,8 @@
     els.guardSection.hidden = !capabilities.guard;
     renderGuard(guardResponse && guardResponse.guard ? guardResponse.guard : null);
     // @store-strip-end
+
+    await refreshAutoScan();
 
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs && tabs[0];
