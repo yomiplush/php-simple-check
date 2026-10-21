@@ -28,6 +28,29 @@ const RAW_BASE = `https://raw.githubusercontent.com/${REPO_SLUG}/${BRANCH}`;
 
 const USERSCRIPT_LIBS = ['detector.js', 'collect-dom.js', 'overlay.js'];
 
+/**
+ * Same detection engine, three entry files so the release page offers the right
+ * download per platform. Each one has its own @downloadURL/@updateURL, so an
+ * installed copy updates itself from the matching file.
+ */
+const USERSCRIPT_VARIANTS = [
+  {
+    file: 'php-simple-check.user.js',
+    suffix: '',
+    platform: ''
+  },
+  {
+    file: 'php-simple-check-ios.user.js',
+    suffix: ' (iOS)',
+    platform: 'iOS・iPadOS・macOS の Safari（Userscripts アプリ）用'
+  },
+  {
+    file: 'php-simple-check-android.user.js',
+    suffix: ' (Android)',
+    platform: 'Android の Firefox（Tampermonkey）用'
+  }
+];
+
 function log(message) {
   process.stdout.write(`${message}\n`);
 }
@@ -80,18 +103,25 @@ async function verifyVersions(manifest, pkg) {
   log(`version ${manifest.version}`);
 }
 
-function userscriptHeader(manifest) {
+function userscriptDescription(manifest, variant) {
+  return variant.platform
+    ? `${variant.platform}。${manifest.description}`
+    : manifest.description;
+}
+
+function userscriptHeader(manifest, variant) {
+  const url = `${RAW_BASE}/userscript/${variant.file}`;
   const lines = [
     '// ==UserScript==',
-    `// @name         ${manifest.name}`,
+    `// @name         ${manifest.name}${variant.suffix}`,
     `// @namespace    https://github.com/${REPO_SLUG}`,
     `// @version      ${manifest.version}`,
-    `// @description  ${manifest.description}`,
+    `// @description  ${userscriptDescription(manifest, variant)}`,
     '// @author       yomiplush',
     `// @homepageURL  https://github.com/${REPO_SLUG}`,
     `// @supportURL   https://github.com/${REPO_SLUG}/issues`,
-    `// @downloadURL  ${RAW_BASE}/userscript/php-simple-check.user.js`,
-    `// @updateURL    ${RAW_BASE}/userscript/php-simple-check.user.js`,
+    `// @downloadURL  ${url}`,
+    `// @updateURL    ${url}`,
     '// @match        http://*/*',
     '// @match        https://*/*',
     '// @run-at       document-idle',
@@ -103,24 +133,28 @@ function userscriptHeader(manifest) {
   return lines.join('\n');
 }
 
-async function buildUserscript(manifest) {
-  const parts = [userscriptHeader(manifest)];
+async function buildUserscripts(manifest) {
+  const bodies = [];
 
   for (const lib of USERSCRIPT_LIBS) {
     const source = await readFile(path.join(EXTENSION_DIR, 'lib', lib), 'utf8');
-    parts.push(`/* ---- extension/lib/${lib} ---- */`);
-    parts.push(source.replace(/\s+$/, ''));
+    bodies.push(`/* ---- extension/lib/${lib} ---- */`);
+    bodies.push(source.replace(/\s+$/, ''));
   }
 
   const main = await readFile(path.join(USERSCRIPT_DIR, 'main.js'), 'utf8');
-  parts.push('/* ---- userscript/main.js ---- */');
-  parts.push(main.replace(/\s+$/, ''));
+  bodies.push('/* ---- userscript/main.js ---- */');
+  bodies.push(main.replace(/\s+$/, ''));
 
-  const content = `${parts.join('\n\n')}\n`;
-  const target = path.join(USERSCRIPT_DIR, 'php-simple-check.user.js');
-  await writeFile(target, content, 'utf8');
-  log(`userscript written (${(Buffer.byteLength(content) / 1024).toFixed(1)} KiB)`);
-  return content;
+  const built = [];
+  for (const variant of USERSCRIPT_VARIANTS) {
+    const content = `${userscriptHeader(manifest, variant)}\n\n${bodies.join('\n\n')}\n`;
+    const target = path.join(USERSCRIPT_DIR, variant.file);
+    await writeFile(target, content, 'utf8');
+    log(`userscript ${variant.file} (${(Buffer.byteLength(content) / 1024).toFixed(1)} KiB)`);
+    built.push({ file: variant.file, content: content });
+  }
+  return built;
 }
 
 async function listFiles(dir, prefix = '') {
@@ -135,7 +169,7 @@ async function listFiles(dir, prefix = '') {
   return files.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-async function buildDist(manifest, userscriptContent) {
+async function buildDist(manifest, userscripts) {
   await rm(DIST_DIR, { recursive: true, force: true });
   await mkdir(DIST_DIR, { recursive: true });
 
@@ -143,7 +177,9 @@ async function buildDist(manifest, userscriptContent) {
   await cp(EXTENSION_DIR, unpacked, { recursive: true });
   log(`dist/extension ready (${(await listFiles(unpacked)).length} files)`);
 
-  await writeFile(path.join(DIST_DIR, 'php-simple-check.user.js'), userscriptContent, 'utf8');
+  for (const userscript of userscripts) {
+    await writeFile(path.join(DIST_DIR, userscript.file), userscript.content, 'utf8');
+  }
 
   // Flat archive: manifest.json sits at the zip root, so whatever folder the
   // extractor creates (usually named after the zip) is directly loadable with
@@ -169,8 +205,8 @@ async function main() {
 
   await verifyVersions(manifest, pkg);
   await verifyManifest(manifest);
-  const userscript = await buildUserscript(manifest);
-  await buildDist(manifest, userscript);
+  const userscripts = await buildUserscripts(manifest);
+  await buildDist(manifest, userscripts);
 
   log('\nDone. Load dist/extension (or extension/) via chrome://extensions → Load unpacked.');
 }

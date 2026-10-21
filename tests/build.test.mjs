@@ -75,22 +75,46 @@ test('the worker maps every verdict to its icon set', async () => {
   assert.ok(background.includes('chrome.action.setIcon'));
 });
 
-test('the committed userscript matches its sources and metadata', async () => {
-  const userscript = await read('userscript/php-simple-check.user.js');
+const RAW_BASE = 'https://raw.githubusercontent.com/yomiplush/php-simple-check/main';
 
-  assert.ok(userscript.startsWith('// ==UserScript=='), 'userscript must start with the metadata block');
-  assert.ok(userscript.includes('// ==/UserScript=='));
-  assert.ok(userscript.includes(`// @version      ${manifest.version}`));
-  assert.ok(userscript.includes('// @match        https://*/*'));
-  assert.ok(userscript.includes('// @grant        none'));
-  assert.ok(userscript.includes('// @noframes'));
+const USERSCRIPTS = [
+  { file: 'php-simple-check.user.js', name: 'PHP Simple Check' },
+  { file: 'php-simple-check-ios.user.js', name: 'PHP Simple Check (iOS)' },
+  { file: 'php-simple-check-android.user.js', name: 'PHP Simple Check (Android)' }
+];
 
-  for (const lib of ['detector.js', 'collect-dom.js', 'overlay.js']) {
-    const source = (await read(`extension/lib/${lib}`)).replace(/\s+$/, '');
-    assert.ok(userscript.includes(source), `${lib} is stale — run npm run build`);
-  }
+test('every committed userscript matches its sources and metadata', async () => {
   const main = (await read('userscript/main.js')).replace(/\s+$/, '');
-  assert.ok(userscript.includes(main), 'userscript/main.js is stale — run npm run build');
+
+  for (const variant of USERSCRIPTS) {
+    const userscript = await read(`userscript/${variant.file}`);
+
+    assert.ok(userscript.startsWith('// ==UserScript=='), `${variant.file} must start with the metadata block`);
+    assert.ok(userscript.includes('// ==/UserScript=='));
+    assert.ok(userscript.includes(`// @name         ${variant.name}`));
+    assert.ok(userscript.includes(`// @version      ${manifest.version}`));
+    assert.ok(userscript.includes(`// @updateURL    ${RAW_BASE}/userscript/${variant.file}`));
+    assert.ok(userscript.includes(`// @downloadURL  ${RAW_BASE}/userscript/${variant.file}`));
+    assert.ok(userscript.includes('// @match        https://*/*'));
+    assert.ok(userscript.includes('// @grant        none'));
+    assert.ok(userscript.includes('// @noframes'));
+
+    for (const lib of ['detector.js', 'collect-dom.js', 'overlay.js']) {
+      const source = (await read(`extension/lib/${lib}`)).replace(/\s+$/, '');
+      assert.ok(userscript.includes(source), `${lib} is stale in ${variant.file} — run npm run build`);
+    }
+    assert.ok(userscript.includes(main), `userscript/main.js is stale in ${variant.file} — run npm run build`);
+  }
+});
+
+test('platform variants differ only in the metadata block', async () => {
+  const bodies = [];
+  for (const variant of USERSCRIPTS) {
+    const text = await read(`userscript/${variant.file}`);
+    const marker = '// ==/UserScript==';
+    bodies.push(text.slice(text.indexOf(marker) + marker.length));
+  }
+  assert.equal(new Set(bodies).size, 1, 'variants must share the same implementation');
 });
 
 test('the detection core has no browser-only dependencies', async () => {

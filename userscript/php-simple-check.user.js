@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      1.3.0
+// @version      1.3.1
 // @description  読み込んだサイトのレスポンスヘッダー・Cookie・DOM から、PHP が使われているかを簡易判定します（🔴 PHP / 🟢 非 PHP）。
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.3.1';
 
   var VERDICTS = {
     php: {

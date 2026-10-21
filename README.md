@@ -24,8 +24,12 @@ Chrome/Edge/Brave のツールバーアイコンは、タブごとの判定結�
 
 | 配布物 | 対応環境 |
 | --- | --- |
-| `extension/`（Chrome 拡張 / Manifest V3） | Chrome・Edge・Brave など Chromium 系デスクトップ |
-| `userscript/php-simple-check.user.js`（ユーザースクリプト） | iOS/iPadOS Safari（Userscripts アプリ）、macOS Safari、Android Firefox（Tampermonkey） |
+| `php-simple-check-extension-vX.Y.Z.zip`（Chrome 拡張 / Manifest V3） | Chrome・Edge・Brave など Chromium 系デスクトップ |
+| `php-simple-check-ios.user.js` | iOS/iPadOS・macOS の Safari（Userscripts アプリ） |
+| `php-simple-check-android.user.js` | Android の Firefox（Tampermonkey） |
+| `php-simple-check.user.js` | 汎用（どちらでも可。旧バージョンからの更新先） |
+
+3 つのユーザースクリプトは**同じ判定エンジン**で、メタデータ（名前・説明・更新先 URL）だけが異なります。Release ページから該当するファイルをダウンロードするか、下記の raw URL を開いてインストールしてください。
 
 判定ロジックは 1 か所（`extension/lib/detector.js`）にまとめてあり、拡張とユーザースクリプトは同じ結果を返します。
 
@@ -68,13 +72,13 @@ php-simple-check-extension-v1.0.1/     ← これを選択する
 1. App Store で [Userscripts](https://apps.apple.com/app/userscripts/id1463298887) をインストールします（無料）。
 2. **設定 › Safari › 機能拡張 › Userscripts** を開き、機能拡張を **オン**、サイトアクセスを **許可**（または「すべての Web サイトを許可」）にします。
 3. Userscripts アプリを起動し、初回だけスクリプトの保存先を選びます（iCloud Drive か「この iPhone 内」）。
-4. Safari で次の URL を開き、インストール画面の指示に従います。
+4. Safari で次の URL を開き、インストール画面の指示に従います（iOS 専用ファイル）。
 
    ```
-   https://raw.githubusercontent.com/yomiplush/php-simple-check/main/userscript/php-simple-check.user.js
+   https://raw.githubusercontent.com/yomiplush/php-simple-check/main/userscript/php-simple-check-ios.user.js
    ```
 
-   アプリの「＋」→「リモートから追加」に同じ URL を貼っても登録できます。以後は `@updateURL` で更新できます。
+   [Release ページ](https://github.com/yomiplush/php-simple-check/releases/latest) の `php-simple-check-ios.user.js` をダウンロードして開いても同じです。アプリの「＋」→「リモートから追加」に同じ URL を貼っても登録でき、以後は `@updateURL` で自動更新できます。
 5. サイトを開くと右下に 🔴 / 🟡 / 🟢 バッジが出ます。タップすると内訳パネルが開きます。
 
 macOS の Safari でも同じ手順で使えます。
@@ -90,7 +94,13 @@ macOS の Safari でも同じ手順で使えます。
 
 1. Firefox for Android（120 以降）をインストールします。
 2. [Tampermonkey](https://addons.mozilla.org/firefox/addon/tampermonkey/) を Firefox に追加します（設定 › 拡張機能 から、または AMO のページから）。
-3. 上と同じ `php-simple-check.user.js` の URL を Firefox で開き、Tampermonkey のインストール画面で **インストール** を押します。
+3. 次の URL を Firefox で開き、Tampermonkey のインストール画面で **インストール** を押します（Android 専用ファイル）。
+
+   ```
+   https://raw.githubusercontent.com/yomiplush/php-simple-check/main/userscript/php-simple-check-android.user.js
+   ```
+
+   [Release ページ](https://github.com/yomiplush/php-simple-check/releases/latest) の `php-simple-check-android.user.js` からでもインストールできます。
 4. Tampermonkey のダッシュボード（拡張機能アイコン → ダッシュボード）でスクリプトが **有効** になっていることを確認します。
 5. サイトを開くと右下にバッジが出ます。更新はダッシュボードの「ユーザースクリプトを更新」から。
 
@@ -230,13 +240,15 @@ extension/                  Chrome 拡張（このフォルダをそのまま読
   lib/overlay.js            ページ内バッジ UI（共有）
   icons/                    生成済み PNG
 userscript/
-  main.js                   ユーザースクリプトのエントリ（ビルドで連結される）
-  php-simple-check.user.js  ビルド成果物（そのままインストール可能）
+  main.js                              エントリ（ビルドで連結される）
+  php-simple-check.user.js             汎用ビルド成果物
+  php-simple-check-ios.user.js         iOS / Safari（Userscripts）用
+  php-simple-check-android.user.js     Android / Firefox（Tampermonkey）用
 tools/                      アイコン生成・zip 作成・ビルド
 tests/                      ユニットテストと E2E
 ```
 
-`userscript/php-simple-check.user.js` はビルド成果物ですが、GitHub の raw URL から直接インストールできるようにコミットしています。`extension/lib/` を編集したら `npm run build` を実行してください（CI が差分をチェックします）。
+`userscript/*.user.js` はビルド成果物ですが、GitHub の raw URL から直接インストールできるようにコミットしています（3 ファイルは同じ実装で、メタデータだけが違います）。`extension/lib/` を編集したら `npm run build` を実行してください（CI が差分をチェックします）。
 
 ### リリース
 

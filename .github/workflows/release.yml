@@ -27,5 +27,7 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             "dist/php-simple-check-extension-v${GITHUB_REF_NAME#v}.zip" \
             "dist/php-simple-check.user.js" \
+            "dist/php-simple-check-ios.user.js" \
+            "dist/php-simple-check-android.user.js" \
             --title "PHP Simple Check $GITHUB_REF_NAME" \
             --generate-notes
