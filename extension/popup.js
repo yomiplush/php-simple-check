@@ -80,11 +80,9 @@
       return;
     }
 
-    var positives = result.signals.filter(function (signal) { return signal.weight > 0; }).length;
     var checked = new Date(result.checkedAt);
     els.verdictMeta.textContent = t('popup.meta', {
       score: result.score,
-      count: positives,
       time: checked.toLocaleTimeString()
     });
   }
@@ -265,6 +263,8 @@
         if (response && response.guard) renderGuard(response.guard);
       });
     });
+    // @store-strip-end
+
     els.overlayToggle.addEventListener('change', function () {
       chrome.storage.local.set({ overlayEnabled: els.overlayToggle.checked }).catch(function () {});
     });
@@ -274,9 +274,8 @@
     capabilities = (guardResponse && guardResponse.capabilities) || { guard: true };
     els.guardSection.hidden = !capabilities.guard;
     renderGuard(guardResponse && guardResponse.guard ? guardResponse.guard : null);
+    // @store-strip-end
 
-    // @store-strip-end
-    // @store-strip-end
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs && tabs[0];
     if (!tab || tab.id == null) {
@@ -287,22 +286,31 @@
     }
 
     activeTabId = tab.id;
-    els.pageUrl.textContent = tab.url || '';
 
-    if (!/^https?:/i.test(tab.url || '')) {
-      render(null);
-      renderEmpty(t('popup.unsupported'));
-      els.rescan.disabled = true;
-      return;
-    }
-
+    // The store build has no host permissions, so tab.url is undefined there.
+    // Ask the worker instead: it learns the URL from the content script.
     var response = await send({ type: 'php-simple-check:get-result', tabId: activeTabId });
+    var knownUrl = (response && response.url) || tab.url || '';
+    els.pageUrl.textContent = knownUrl;
+
     if (response && response.result) {
       render(response.result);
       return;
     }
 
     render(null);
+
+    if (knownUrl && !/^https?:/i.test(knownUrl)) {
+      renderEmpty(t('popup.unsupported'));
+      els.rescan.disabled = true;
+      return;
+    }
+
+    if (!knownUrl) {
+      renderEmpty(t('popup.reloadToScan'));
+      return;
+    }
+
     renderEmpty(t('popup.noVerdict'));
     void rescan();
   }

@@ -85,7 +85,7 @@ function colorAt(x, y, palette) {
   return palette.background;
 }
 
-function renderIcon(size, palette) {
+export function renderIcon(size, palette) {
   const rgba = new Uint8Array(size * size * 4);
   const step = 1 / (size * SAMPLES);
   const samplesPerPixel = SAMPLES * SAMPLES;
@@ -124,14 +124,38 @@ function renderIcon(size, palette) {
   return rgba;
 }
 
-await mkdir(OUT_DIR, { recursive: true });
+export async function generate(options = {}) {
+  const outDir = options.outDir || OUT_DIR;
+  const sizes = options.sizes || SIZES;
+  const states = options.states || Object.keys(PALETTES);
+  const prefix = options.prefix || '';
 
-for (const [name, palette] of Object.entries(PALETTES)) {
-  for (const size of SIZES) {
-    const fileName = name === 'idle' ? `icon${size}.png` : `status-${name}-${size}.png`;
-    const file = path.join(OUT_DIR, fileName);
-    const png = encodePng(size, size, renderIcon(size, palette));
-    await writeFile(file, png);
-    console.log(`wrote ${path.relative(ROOT, file)} (${png.length} bytes)`);
+  await mkdir(outDir, { recursive: true });
+
+  for (const name of states) {
+    const palette = PALETTES[name];
+    for (const size of sizes) {
+      const fileName = name === 'idle' ? `icon${size}.png` : `status-${name}-${size}.png`;
+      const file = path.join(outDir, `${prefix}${fileName}`);
+      const png = encodePng(size, size, renderIcon(size, palette));
+      await writeFile(file, png);
+      console.log(`wrote ${file} (${png.length} bytes)`);
+    }
   }
+}
+
+// CLI: node tools/make-icons.mjs [--out=DIR] [--sizes=16,32] [--states=idle] [--prefix=x-]
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = Object.fromEntries(
+    process.argv.slice(2).map((argument) => {
+      const [key, value] = argument.replace(/^--/, '').split('=');
+      return [key, value];
+    })
+  );
+  await generate({
+    outDir: args.out,
+    sizes: args.sizes ? args.sizes.split(',').map(Number) : undefined,
+    states: args.states ? args.states.split(',') : undefined,
+    prefix: args.prefix
+  });
 }
