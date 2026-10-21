@@ -241,6 +241,7 @@ Conversely, static HTML served as `.php` is reported as red. Same-site detection
 
 Full policy: <https://yomiplush.github.io/php-simple-check/privacy-policy.html>
 (source: [docs/privacy-policy.html](docs/privacy-policy.html)).
+Reviewer notes: <https://yomiplush.github.io/php-simple-check/reviewer-notes.html>.
 
 ## Chrome Web Store
 

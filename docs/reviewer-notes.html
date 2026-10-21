@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PHP Simple Check — notes for reviewers</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #111827;
+        --muted: #4b5563;
+        --line: #e5e7eb;
+        --bg: #ffffff;
+        --code: #f3f4f6;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #e6edf3;
+          --muted: #9ba7b4;
+          --line: #30363d;
+          --bg: #0d1117;
+          --code: #161b22;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 40px 20px;
+        background: var(--bg);
+        color: var(--fg);
+        font: 400 16px/1.7 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+      }
+      main { max-width: 760px; margin: 0 auto; }
+      h1 { font-size: 28px; margin: 0 0 4px; }
+      h2 { font-size: 19px; margin: 30px 0 8px; }
+      p, li { margin: 0 0 10px; }
+      ul, ol { padding-left: 22px; }
+      .meta { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+      code, pre {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        background: var(--code);
+        border-radius: 6px;
+      }
+      code { padding: 1px 5px; font-size: 14px; }
+      pre { padding: 14px 16px; overflow: auto; font-size: 13.5px; line-height: 1.6; }
+      .table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      .table th, .table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PHP Simple Check — notes for reviewers</h1>
+      <p class="meta">Single-purpose, fully local extension. Nothing is transmitted off the device.</p>
+
+      <h2>What it does</h2>
+      <p>
+        After a page loads, the extension inspects signals that are already available to that page —
+        response headers (one same-origin <code>HEAD</code> request), cookies the page's own JavaScript
+        can read, URLs and markup — and shows a verdict: 🔴 PHP usage detected, 🟡 possibly PHP, or
+        🟢 no PHP signals. The verdict appears on the toolbar icon, an optional on-page badge and in the
+        popup, which also lists every signal that contributed to the score.
+      </p>
+
+      <h2>How to test (2 minutes)</h2>
+      <ol>
+        <li>Install the extension and open any <code>https://</code> page. A badge appears in the
+            bottom-right corner and the toolbar icon takes a colour.</li>
+        <li>Click the badge (or the toolbar icon) to see the breakdown: score, signals, observed headers.</li>
+        <li>For a clear 🔴, open <code>https://wordpress.org/</code> (WordPress runs on PHP).
+            For a clear 🟢, open <code>https://example.com/</code>.</li>
+        <li>Use <em>Rescan</em> to re-run the check and <em>Copy report</em> to copy the English
+            fingerprint to the clipboard.</li>
+      </ol>
+
+      <h2>Network behaviour</h2>
+      <p>
+        The only request the extension makes is a <code>HEAD</code> request to the URL you already
+        opened, issued from that page's own origin, to read its response headers. It is visible in
+        DevTools › Network. There are no servers, no analytics and no remote code; all translations and
+        assets are bundled.
+      </p>
+
+      <h2>Permissions</h2>
+      <table class="table">
+        <tr><th>Declared permission</th><th>Why</th></tr>
+        <tr>
+          <td><code>storage</code></td>
+          <td>Remembers the on-page badge preference and per-site "hide" choices; keeps the latest
+              verdict per tab in session storage so the popup can show it (cleared when the tab closes).</td>
+        </tr>
+        <tr>
+          <td>Content script on <code>http(s)</code> pages</td>
+          <td>The verdict concerns whichever page the user opens. On that page it reads the page's own
+              DOM, issues the one <code>HEAD</code> request described above, and appends a badge element.
+              It has no <code>host_permissions</code>, no cookie API access, and no network interception.
+              The Chrome Web Store is excluded via <code>exclude_matches</code>.</td>
+        </tr>
+      </table>
+
+      <h2>What it is not</h2>
+      <p>
+        It is a stack fingerprint, not a malware or security scanner. "Uses PHP" is not a risk rating,
+        and the extension never blocks, redirects or modifies a navigation.
+      </p>
+
+      <h2>Contact</h2>
+      <p><a href="https://github.com/yomiplush/php-simple-check/issues">github.com/yomiplush/php-simple-check/issues</a></p>
+
+      <footer>
+        PHP Simple Check · MIT License ·
+        <a href="https://github.com/yomiplush/php-simple-check">source</a>
+      </footer>
+    </main>
+  </body>
+</html>

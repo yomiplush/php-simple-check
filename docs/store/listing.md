@@ -186,6 +186,25 @@ Deutsch / Português (Brasil) / Русский / العربية / हिन्�
 | Ads / analytics | None. |
 | Privacy policy | URL above. |
 
+## Reviewer notes field
+
+The console's optional "notes for the review team" field (bottom of the Privacy
+practices tab, wording varies: 「審査チームへのメモ」/ "Reviewer notes" /
+"Test instructions") can take the short block below. If the field is missing,
+the same content is published at
+<https://yomiplush.github.io/php-simple-check/reviewer-notes.html> and linked
+from the homepage URL.
+
+```
+Single purpose, fully local stack fingerprint. Test: install, open
+https://wordpress.org/ (red: PHP detected) and https://example.com/ (green: no
+PHP). The badge sits bottom-right; the toolbar icon takes the verdict colour;
+click either one for the signal breakdown. Network: the only request is a HEAD
+request to the URL you opened, from that page's origin, to read its response
+headers (visible in DevTools > Network). Permissions: storage only; no
+host_permissions, no cookies API, no remote code, no analytics.
+```
+
 ## Reviewer test script
 
 1. Install the extension and open any `https://` page.
