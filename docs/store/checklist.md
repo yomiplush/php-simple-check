@@ -56,6 +56,9 @@ EXTENSION_DIR=dist/store/php-simple-check EXPECT_MINIMAL=1 \
 - [ ] Homepage: `https://github.com/yomiplush/php-simple-check`
 - [ ] Support URL: `https://github.com/yomiplush/php-simple-check/issues`
 - [ ] (Optional) Small promo tile 440×280, marquee 1400×560.
+- [ ] Have your own captures? Frame them to 1280×800 with
+      `python3 tools/frame-store-screenshots.py --in <dir> --out <dir>`
+      (keeps the aspect ratio, adds the brand background, title and shadow).
 
 ## 3. Privacy practices tab
 
