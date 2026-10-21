@@ -92,8 +92,12 @@ https://github.com/yomiplush/php-simple-check/issues
 **Privacy policy URL**
 
 ```
-https://github.com/yomiplush/php-simple-check/blob/main/docs/privacy-policy.html
+https://yomiplush.github.io/php-simple-check/privacy-policy.html
 ```
+
+(Hosted with GitHub Pages from `docs/`. The GitHub blob URL
+`https://github.com/yomiplush/php-simple-check/blob/main/docs/privacy-policy.html`
+works as a fallback.)
 
 ---
 

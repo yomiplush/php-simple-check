@@ -222,7 +222,8 @@ Conversely, static HTML served as `.php` is reported as red. Same-site detection
 - Settings live in `chrome.storage.local`, per-tab verdicts in `chrome.storage.session` (cleared when the browser exits).
 - The store build requests a single permission (`storage`) and uses no cookie API; the full build additionally reads cookie *names* for the current tab, never values.
 
-Full policy: [docs/privacy-policy.html](docs/privacy-policy.html).
+Full policy: <https://yomiplush.github.io/php-simple-check/privacy-policy.html>
+(source: [docs/privacy-policy.html](docs/privacy-policy.html)).
 
 ## Chrome Web Store
 

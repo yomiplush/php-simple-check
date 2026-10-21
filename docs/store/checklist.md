@@ -68,9 +68,8 @@ EXTENSION_DIR=dist/store/php-simple-check EXPECT_MINIMAL=1 \
       evaluated at runtime.
 - [ ] Data usage: tick **none** of the collection categories. Do not select
       "sells data" or "uses data for unrelated purposes".
-- [ ] Privacy policy URL:
-      `https://github.com/yomiplush/php-simple-check/blob/main/docs/privacy-policy.html`
-      (or the GitHub Pages URL if you enable Pages for `/docs`).
+- [ ] Privacy policy URL: `https://yomiplush.github.io/php-simple-check/privacy-policy.html`
+      (GitHub Pages is enabled for `/docs`; the blob URL also works).
 - [ ] Certify the three compliance statements.
 
 ## 4. Distribution tab
@@ -94,7 +93,7 @@ EXTENSION_DIR=dist/store/php-simple-check EXPECT_MINIMAL=1 \
 
 | Rejection reason | Mitigation here |
 | --- | --- |
-| Broad or unjustified permissions | Store build declares only `storage`; no host permissions, no `cookies`, no `webRequest`, no DNR. |
+| Broad or unjustified permissions | Store build declares only `storage`; no host permissions, `cookies`, `webRequest` or DNR. (Chrome still warns about site access because a content script runs on http(s) pages — that access is inherent to showing a page-level verdict, and no data leaves the browser.) |
 | Remote code | No `eval`, no `new Function`, no remote scripts; everything is bundled, including all 12 translations. |
 | Missing or vague privacy policy | `docs/privacy-policy.html` spells out storage, the single HEAD request and the absence of collection. |
 | Unclear single purpose | Stated in the listing and in the privacy tab; the UI does exactly one thing. |
