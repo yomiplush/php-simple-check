@@ -63,6 +63,14 @@
         no third parties.
       </p>
 
+      <p class="summary">
+        <strong>Chrome Web Store Limited Use</strong>
+        Our use of information received from Chrome APIs adheres to the Chrome Web Store User Data
+        Policy, including the Limited Use requirements. We do not sell or transfer user data to third
+        parties, we do not use or transfer it for purposes unrelated to the extension's single purpose,
+        and we do not use or transfer it to determine creditworthiness or for lending purposes.
+      </p>
+
       <h2>1. What the extension does</h2>
       <p>
         When you open a page, PHP Simple Check inspects signals that are already available to that page —
@@ -87,7 +95,9 @@
         </li>
         <li>
           <strong>Per-tab verdicts</strong> (<code>chrome.storage.session</code>): the latest result for
-          each open tab, so the popup can show it. Session storage is cleared when the browser exits.
+          each open tab, so the popup can show it. This includes the page URL, the detected signal
+          labels and the URLs the page loaded. It stays on your device and is cleared when the tab is
+          closed or the browser exits.
         </li>
         <li>
           <strong>Per-site preference</strong> (userscript only): a flag in that site's
@@ -127,22 +137,33 @@
         collect data.
       </p>
 
-      <h2>7. Third parties</h2>
+      <h2>7. Retention and deletion</h2>
+      <ul>
+        <li>Settings are kept until you uninstall the extension or clear its storage.</li>
+        <li>Per-tab verdicts disappear when the tab is closed (or when the browser exits).</li>
+        <li>
+          The userscript's "Hide on this site" flag lives in that site's <code>localStorage</code>;
+          pressing <em>Undo</em> or clearing website data in your browser removes it.
+        </li>
+        <li>Because nothing is sent to the developer, there is no server-side copy to delete.</li>
+      </ul>
+
+      <h2>8. Third parties</h2>
       <p>
         None. The extension bundles all of its code and loads nothing at runtime — no remote scripts, no
         fonts, no images, no CDNs.
       </p>
 
-      <h2>8. Children</h2>
+      <h2>9. Children</h2>
       <p>The extension is a developer utility and is not directed at children under 13.</p>
 
-      <h2>9. Changes</h2>
+      <h2>10. Changes</h2>
       <p>
         If this policy changes, the effective date above is updated and the change is published in the
         project repository: <code>docs/privacy-policy.html</code>.
       </p>
 
-      <h2>10. Contact</h2>
+      <h2>11. Contact</h2>
       <p>
         Questions or requests:
         <a href="https://github.com/yomiplush/php-simple-check/issues">github.com/yomiplush/php-simple-check/issues</a>.
@@ -154,6 +175,8 @@
         開いたページ自身への <code>HEAD</code> リクエスト 1 回（レスポンスヘッダーの取得）のみです。
         設定は <code>storage</code> に、タブごとの判定結果はセッションストレージに保存され、ブラウザ終了時に消えます。
         ストア版の権限は <code>storage</code> のみで、Cookie API は使用しません。
+        Chrome ウェブストアのユーザーデータポリシー（Limited Use）を遵守し、データの販売・第三者提供・
+        目的外利用は行いません。
       </p>
 
       <footer>

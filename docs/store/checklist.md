@@ -15,6 +15,7 @@ prepared — the steps are ordered the way the console asks for them.
 npm install --no-package-lock   # not required: there are no dependencies
 npm test                        # 44 unit tests
 npm run build                   # writes dist/
+npm run check:store             # policy preflight (CI runs this too)
 ```
 
 Upload **`dist/php-simple-check-store-vX.Y.Z.zip`** (or the folder
@@ -37,6 +38,7 @@ EXTENSION_DIR=dist/store/php-simple-check EXPECT_MINIMAL=1 \
   CHROME_BIN=/path/to/chrome-for-testing/chrome-linux64/chrome npm run test:e2e
 ```
 
+- [ ] `npm run check:store` prints `✔ store package looks ready for submission`.
 - [ ] Confirm the zip has `manifest.json` at its **root** (not inside a folder).
 - [ ] Confirm `dist/store/php-simple-check/manifest.json` says `"permissions": ["storage"]`
       and has no `host_permissions`.

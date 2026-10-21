@@ -1,6 +1,6 @@
 {
   "name": "php-simple-check",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "description": "Chrome extension and userscripts that tell you whether a site is served by PHP (🔴) or not (🟢).",
@@ -19,6 +19,7 @@
     "test:e2e": "node tests/e2e.mjs",
     "build": "node tools/build.mjs",
     "icons": "node tools/make-icons.mjs",
-    "screenshots": "node tools/screenshots.mjs"
+    "screenshots": "node tools/screenshots.mjs",
+    "check:store": "node tools/check-store.mjs"
   }
 }

@@ -231,8 +231,11 @@ Everything needed for submission is in [`docs/store/`](docs/store):
 
 - [`checklist.md`](docs/store/checklist.md) — console walkthrough, privacy-practices answers, reviewer notes, common rejection causes
 - [`listing.md`](docs/store/listing.md) — English and Japanese store copy, permission justifications, reviewer test script
+- [`policy-compliance.md`](docs/store/policy-compliance.md) — requirement-by-requirement audit, why all-site content-script access is needed, what the store build omits and reviewer reply templates
 - [`privacy-policy.html`](docs/privacy-policy.html) — hostable policy page
 - `screenshot-1.png`, `screenshot-2.png` — 1280×800 store screenshots, regenerated with `npm run screenshots`
+
+`npm run check:store` verifies the built store package mechanically (permission surface, no remote code or inline scripts, localisation wiring, icon and screenshot sizes, listing summary length). CI and the release workflow both fail if it does not pass.
 
 ## Development
 

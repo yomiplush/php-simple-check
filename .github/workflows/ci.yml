@@ -17,6 +17,8 @@ jobs:
         run: npm test
       - name: Build userscript and release artifacts
         run: npm run build
+      - name: Chrome Web Store preflight
+        run: npm run check:store
       - name: Generated files are committed
         run: git diff --exit-code
 

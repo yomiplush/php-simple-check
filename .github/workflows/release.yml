@@ -22,6 +22,8 @@ jobs:
         run: npm test
       - name: Build artifacts
         run: npm run build
+      - name: Chrome Web Store preflight
+        run: npm run check:store
       - name: Assemble release notes
         run: |
           PREV="$(git describe --tags --abbrev=0 "$GITHUB_REF_NAME^" 2>/dev/null || true)"

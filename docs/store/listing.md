@@ -26,10 +26,20 @@ See at a glance whether a site is served by PHP. Detection runs locally: a colou
 Developer Tools
 ```
 
+**Single purpose**
+
+```
+Report whether the page you are looking at is served by PHP, using signals available to the page itself.
+```
+
 **Detailed description**
 
 ```
 PHP Simple Check tells you whether the page you are looking at is served by PHP.
+
+Single purpose: report whether the current page is served by PHP by inspecting the page's own response
+headers, cookies, URLs and markup. It does nothing else — no blocking, no browsing-history access, no
+accounts, no remote servers.
 
 After a page loads, the extension inspects signals that are already available to
 the page itself — response headers, cookies the page can read, URLs, and markup —
@@ -53,7 +63,11 @@ Privacy first
 • The only network request is a HEAD request to the page you already opened, used
   to read its own response headers. Nothing is sent to us or to third parties.
 • The store build requests a single permission: storage (for your badge preference
-  and per-site choices).
+  and per-site choices). It has no host permissions, reads no cookies through
+  browser APIs, intercepts no network traffic, and ships no remote code.
+• Google Chrome Web Store Limited Use: no data is sold, transferred or used for
+  purposes unrelated to this single purpose, and none of it is used for
+  creditworthiness or lending.
 
 Good to know
 • A client-side check can only see signals. A site that hides its stack (proxy
@@ -135,6 +149,10 @@ PHP / ? / OK を表示し、ページ右下のバッジとポップアップで�
 • 通信は、開いたページ自身への HEAD リクエスト 1 回だけ（レスポンスヘッダーの取得）。
   どこにも送信しません。
 • ストア版の権限は storage のみ（バッジ表示とサイトごとの設定の保存）。
+
+単一目的
+• ページ自身から取得できる情報（レスポンスヘッダー、Cookie、URL、マークアップ）
+  だけを使い、そのページが PHP で動いているかを報告します。それ以外の機能はありません。
 
 注意
 • クライアント側で見えるのは「兆候」だけです。ヘッダーを削除するプロキシや
