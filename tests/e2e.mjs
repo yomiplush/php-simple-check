@@ -24,7 +24,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
 }
-const EXTENSION_DIR = path.join(ROOT, 'extension');
+const EXTENSION_DIR = process.env.EXTENSION_DIR
+  ? path.resolve(process.env.EXTENSION_DIR)
+  : path.join(ROOT, 'extension');
 const CHROME = process.env.CHROME_BIN || 'google-chrome-stable';
 
 const STATIC_PAGE = `<!doctype html>

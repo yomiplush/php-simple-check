@@ -24,12 +24,29 @@
 
 GitHub からサイドロードします。
 
-1. [Releases](https://github.com/yomiplush/php-simple-check/releases) から最新の `php-simple-check-extension-vX.Y.Z.zip` をダウンロードして解凍します。
-2. `chrome://extensions` を開きます。
+1. [Releases](https://github.com/yomiplush/php-simple-check/releases/latest) から最新の `php-simple-check-extension-vX.Y.Z.zip` をダウンロードして **解凍** します。
+2. ブラウザで `chrome://extensions`（Brave は `brave://extensions`）を開きます。
 3. 右上の **デベロッパー モード** をオンにします。
-4. **パッケージ化されていない拡張機能を読み込む** を押し、解凍した `php-simple-check-extension` フォルダを選択します。
+4. **パッケージ化されていない拡張機能を読み込む** を押し、**`manifest.json` が直下にあるフォルダ** を選択します。
+
+解凍すると通常は zip と同じ名前のフォルダができます。そのフォルダの中身はこうなっています。
+
+```
+php-simple-check-extension-v1.0.1/     ← これを選択する
+├── manifest.json                      ← このファイルが直下にあること
+├── background.js
+├── content.js
+├── popup.html
+├── lib/
+└── icons/
+```
 
 リポジトリを clone している場合は、`extension/` ディレクトリをそのまま読み込んでも構いません（ビルド不要）。
+
+> **`Manifest file is missing or unreadable` と出たら**
+> - zip を解凍せずに選択している → 先に解凍する
+> - 1つ上のフォルダを選択している → `manifest.json` が入っているフォルダを選ぶ
+> - v1.0.0 の zip は中のフォルダが1階層深い `php-simple-check-extension/` でした。v1.0.1 以降は直下に `manifest.json` が入る構造に変更しています（v1.0.0 を使う場合は `php-simple-check-extension/` を選択してください）
 
 インストール後、任意のサイトを開くとツールバーのアイコンにバッジが付きます。アイコンをクリックすると判定の内訳（どのシグナルが効いたか）が確認できます。
 

@@ -145,12 +145,16 @@ async function buildDist(manifest, userscriptContent) {
 
   await writeFile(path.join(DIST_DIR, 'php-simple-check.user.js'), userscriptContent, 'utf8');
 
+  // Flat archive: manifest.json sits at the zip root, so whatever folder the
+  // extractor creates (usually named after the zip) is directly loadable with
+  // "Load unpacked". A nested php-simple-check-extension/ folder made users
+  // select the parent and hit "Manifest file is missing or unreadable".
   const zipEntries = [];
   for (const file of await listFiles(EXTENSION_DIR)) {
-    zipEntries.push({
-      name: `php-simple-check-extension/${file.name}`,
-      data: await readFile(file.file)
-    });
+    zipEntries.push({ name: file.name, data: await readFile(file.file) });
+  }
+  if (!zipEntries.some((entry) => entry.name === 'manifest.json')) {
+    throw new Error('extension zip must contain manifest.json at its root');
   }
   const zip = createZip(zipEntries);
   const versionedZip = path.join(DIST_DIR, `php-simple-check-extension-v${manifest.version}.zip`);
