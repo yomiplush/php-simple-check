@@ -1,0 +1,267 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --surface: #f9fafb;
+  --strong: #b3261e;
+  --weak: #8a5300;
+  --ok: #1b5e20;
+  --accent: #0969da;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --line: #30363d;
+    --surface: #161b22;
+    --strong: #ffb4ab;
+    --weak: #ffd18c;
+    --ok: #8bd18a;
+    --accent: #4493f8;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 360px;
+  margin: 0;
+  padding: 12px 14px 14px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 12px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.logo {
+  font-size: 15px;
+  line-height: 1;
+}
+
+h1 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.version {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.verdict-emoji {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.verdict-body {
+  min-width: 0;
+}
+
+.verdict-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.verdict-meta {
+  margin: 1px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.verdict-php {
+  border-color: #d32f2f;
+  box-shadow: inset 3px 0 0 #d32f2f;
+}
+
+.verdict-maybe {
+  border-color: #f9a825;
+  box-shadow: inset 3px 0 0 #f9a825;
+}
+
+.verdict-none {
+  border-color: #2e7d32;
+  box-shadow: inset 3px 0 0 #2e7d32;
+}
+
+.page-url {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font: 400 10.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+.block {
+  margin-top: 12px;
+}
+
+.block h2 {
+  margin: 0 0 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.signal-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 210px;
+  overflow: auto;
+}
+
+.signal-list li {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+}
+
+.weight {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 0 4px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.weight.strong {
+  background: color-mix(in srgb, #d32f2f 16%, transparent);
+  color: var(--strong);
+}
+
+.weight.weak {
+  background: color-mix(in srgb, #f9a825 22%, transparent);
+  color: var(--weak);
+}
+
+.weight.negative {
+  background: color-mix(in srgb, #2e7d32 18%, transparent);
+  color: var(--ok);
+}
+
+.signal-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.signal-detail {
+  display: block;
+  color: var(--muted);
+  font: 400 10px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+.fact-list {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 10.5px;
+}
+
+.fact-list dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fact-list dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-all;
+}
+
+.empty {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+button.primary {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary:hover {
+  filter: brightness(1.08);
+}
+
+button.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.toggle input {
+  margin: 0;
+}
+
+.note {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.55;
+}

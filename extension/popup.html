@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PHP Simple Check</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <span class="logo" aria-hidden="true">🐘</span>
+      <h1>PHP Simple Check</h1>
+      <span class="version" id="version"></span>
+    </header>
+
+    <main>
+      <section class="verdict verdict-unknown" id="verdict">
+        <span class="verdict-emoji" id="verdict-emoji">⚪</span>
+        <div class="verdict-body">
+          <p class="verdict-label" id="verdict-label">判定中…</p>
+          <p class="verdict-meta" id="verdict-meta"></p>
+        </div>
+      </section>
+
+      <p class="page-url" id="page-url"></p>
+
+      <section class="block" id="signal-section" hidden>
+        <h2>検出したシグナル</h2>
+        <ul class="signal-list" id="signal-list"></ul>
+      </section>
+
+      <section class="block" id="fact-section" hidden>
+        <h2>確認できた値</h2>
+        <dl class="fact-list" id="fact-list"></dl>
+      </section>
+
+      <section class="block" id="empty-section" hidden>
+        <p class="empty" id="empty-text"></p>
+      </section>
+
+      <div class="actions">
+        <button type="button" id="rescan" class="primary">再スキャン</button>
+        <label class="toggle">
+          <input type="checkbox" id="overlay-toggle" />
+          <span>ページ上にバッジを表示</span>
+        </label>
+      </div>
+
+      <p class="note">
+        クライアント側で観測できるのは「兆候」だけです。PHP が動いていても応答に痕跡が出ない構成では 🟢 になります。
+        判定結果は端末内でのみ処理され、外部へ送信しません。
+      </p>
+    </main>
+
+    <script src="lib/detector.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Unit tests
+        run: npm test
+      - name: Build userscript and release artifacts
+        run: npm run build
+      - name: Generated files are committed
+        run: git diff --exit-code
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Chrome for Testing
+        run: npx --yes @puppeteer/browsers install chrome@stable --path "$HOME/cft"
+      - name: Run extension and userscript end-to-end checks
+        run: |
+          CHROME_BIN="$(ls -d "$HOME"/cft/chrome/*/chrome-linux64/chrome | head -n 1)"
+          echo "Using $CHROME_BIN"
+          CHROME_BIN="$CHROME_BIN" node tests/e2e.mjs
