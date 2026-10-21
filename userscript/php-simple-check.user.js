@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      1.2.0
+// @version      1.3.0
 // @description  読み込んだサイトのレスポンスヘッダー・Cookie・DOM から、PHP が使われているかを簡易判定します（🔴 PHP / 🟢 非 PHP）。
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
 
   var VERDICTS = {
     php: {
@@ -805,6 +805,92 @@
     '}'
   ].join('\n');
 
+  /* ------------------------------------------------------------ guard banner */
+
+  var BANNER_ID = 'php-simple-check-banner';
+  var BANNER_CSS = [
+    ':host{all:initial}',
+    '*{box-sizing:border-box}',
+    '.bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#8e1f1a;color:#fff;',
+    'font:400 12px/1.45 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif;',
+    'box-shadow:0 2px 12px rgba(0,0,0,.28)}',
+    '.icon{font-size:15px;line-height:1;flex:0 0 auto}',
+    '.text{flex:1 1 auto;min-width:0}',
+    '.host{font-weight:700;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all}',
+    '.actions{display:flex;gap:6px;flex:0 0 auto}',
+    '.actions button{border:1px solid rgba(255,255,255,.5);border-radius:7px;background:transparent;color:#fff;',
+    'font:inherit;font-weight:600;padding:5px 9px;cursor:pointer;touch-action:manipulation}',
+    '.actions button.allow{background:#fff;color:#8e1f1a;border-color:#fff}',
+    '.actions button:focus-visible{outline:2px solid #fff;outline-offset:1px}',
+    '@media (pointer:coarse){.bar{padding:12px 14px;font-size:12.5px}.actions button{padding:8px 12px}}',
+    '@media (max-width:560px){.bar{flex-wrap:wrap}.actions{width:100%;justify-content:flex-end}}'
+  ].join('\n');
+
+  var banner = { host: null, onAllow: null, onLeave: null };
+
+  function hideGuardBanner() {
+    if (banner.host && banner.host.parentNode) banner.host.parentNode.removeChild(banner.host);
+    banner.host = null;
+  }
+
+  function showGuardBanner(options) {
+    var settings = options || {};
+    hideGuardBanner();
+
+    var host = el('div');
+    host.id = BANNER_ID;
+    host.style.cssText = 'all:initial;position:fixed;left:0;right:0;top:0;z-index:2147483647;display:block;';
+    var shadow = host.attachShadow({ mode: 'open' });
+
+    var style = el('style');
+    style.textContent = BANNER_CSS;
+
+    var bar = el('div', 'bar');
+    bar.setAttribute('role', 'alert');
+    bar.appendChild(el('span', 'icon', '⚠'));
+
+    var text = el('span', 'text');
+    text.appendChild(el('span', 'host', settings.host || 'このサイト'));
+    text.appendChild(
+      el('span', null, ' は PHP 使用の兆候あり。警戒モードにより次回からブロックします。')
+    );
+
+    var actions = el('span', 'actions');
+
+    var allow = el('button', 'allow', '許可する');
+    allow.type = 'button';
+    allow.addEventListener('click', function () {
+      hideGuardBanner();
+      if (banner.onAllow) banner.onAllow();
+    });
+
+    var leave = el('button', null, '離れる');
+    leave.type = 'button';
+    leave.addEventListener('click', function () {
+      if (banner.onLeave) banner.onLeave();
+      else hideGuardBanner();
+    });
+
+    var close = el('button', null, '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', '閉じる');
+    close.addEventListener('click', hideGuardBanner);
+
+    actions.appendChild(allow);
+    actions.appendChild(leave);
+    actions.appendChild(close);
+
+    bar.appendChild(text);
+    bar.appendChild(actions);
+    shadow.appendChild(style);
+    shadow.appendChild(bar);
+    document.documentElement.appendChild(host);
+
+    banner.host = host;
+    banner.onAllow = settings.onAllow || null;
+    banner.onLeave = settings.onLeave || null;
+  }
+
   var state = {
     host: null,
     refs: null,
@@ -1018,6 +1104,8 @@
     hide: hide,
     show: show,
     destroy: destroy,
+    showGuardBanner: showGuardBanner,
+    hideGuardBanner: hideGuardBanner,
     onClose: function (handler) { state.onClose = handler; }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

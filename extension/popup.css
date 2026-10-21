@@ -31,6 +31,8 @@
 
 body {
   width: 360px;
+  max-height: 580px;
+  overflow-y: auto;
   margin: 0;
   padding: 12px 14px 14px;
   background: var(--bg);
@@ -264,4 +266,78 @@ button.primary:disabled {
   color: var(--muted);
   font-size: 10px;
   line-height: 1.55;
+}
+
+.guard {
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.guard-toggle {
+  font-size: 12px;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.guard-hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.guard-group {
+  margin-top: 10px;
+}
+
+.guard-group h3 {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.guard-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 128px;
+  overflow: auto;
+}
+
+.guard-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.guard-host {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+button.mini {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+button.mini:hover {
+  background: var(--surface);
 }

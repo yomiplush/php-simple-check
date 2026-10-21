@@ -579,6 +579,123 @@ async function main() {
       await client.send('Target.closeTarget', { targetId }).catch(() => {});
     }
 
+    // ---- guard mode: block a flagged host on the next navigation -----------
+    {
+      const enabled = await evaluate(
+        workerSession,
+        `chrome.storage.local.set({ guardEnabled: true, blockedHosts: {}, allowedHosts: [] })
+           .then(() => syncGuardRules())
+           .then(() => true)`
+      );
+      if (!enabled) fail('guard mode could not be enabled');
+
+      const guardUrl = origin + '/php/';
+      const { targetId } = await client.send('Target.createTarget', { url: guardUrl });
+      const { sessionId } = await client.send('Target.attachToTarget', { targetId, flatten: true });
+      await clearCookies(sessionId);
+
+      const banner = await waitFor(
+        'guard warning banner on the flagged page',
+        async () => {
+          const value = await evaluate(
+            sessionId,
+            `(() => {
+               const host = document.getElementById('php-simple-check-banner');
+               if (!host || !host.shadowRoot) return null;
+               const text = host.shadowRoot.querySelector('.text');
+               return text ? { text: text.textContent } : null;
+             })()`
+          );
+          return value && value.text ? value : null;
+        },
+        12000
+      ).catch(() => null);
+
+      const flagged = await evaluate(
+        workerSession,
+        `(async () => {
+           const stored = await chrome.storage.local.get({ blockedHosts: {}, allowedHosts: [] });
+           const rules = await chrome.declarativeNetRequest.getDynamicRules();
+           return { blocked: Object.keys(stored.blockedHosts), allowed: stored.allowedHosts, rules: rules.length };
+         })()`
+      );
+
+      const guardProblems = [];
+      if (!banner || !banner.text.includes('127.0.0.1')) guardProblems.push('warning banner missing on the flagged page');
+      if (!flagged.blocked.includes('127.0.0.1')) guardProblems.push('host was not recorded as blocked');
+      if (flagged.rules !== 1) guardProblems.push(`expected 1 dynamic rule, got ${flagged.rules}`);
+
+      // The next navigation to the host must be intercepted.
+      await client.send('Page.enable', {}, sessionId).catch(() => {});
+      await client.send('Page.navigate', { url: origin + '/php/again' }, sessionId).catch(() => {});
+
+      const interstitial = await waitFor(
+        'interstitial instead of the blocked site',
+        async () => {
+          const value = await evaluate(
+            sessionId,
+            `({
+               href: location.href,
+               ready: document.readyState,
+               host: document.getElementById('host') ? document.getElementById('host').textContent : null,
+               hasAllow: Boolean(document.getElementById('allow'))
+             })`
+          );
+          // blocked.js fills #host once it has run; "…" is the static placeholder.
+          return value && value.href.includes('blocked.html') && value.ready === 'complete' && value.host !== '…'
+            ? value
+            : null;
+        },
+        12000
+      ).catch(() => null);
+
+      if (!interstitial) guardProblems.push('navigation was not redirected to blocked.html');
+      else if (interstitial.host !== '127.0.0.1') guardProblems.push(`interstitial host ${interstitial.host}`);
+
+      if (!interstitial) {
+        if (guardProblems.length) fail(`guard: ${guardProblems.join(', ')}`);
+        await client.send('Target.closeTarget', { targetId }).catch(() => {});
+      } else {
+        // Allow the host: the rule is removed and the original URL loads.
+        await evaluate(sessionId, `document.getElementById('allow').click()`);
+        const resumed = await waitFor(
+          'original page after allowing the host',
+          async () => {
+            const value = await evaluate(sessionId, '({ href: location.href, text: document.body ? document.body.textContent : "" })');
+            return value && value.href === guardUrl ? value : null;
+          },
+          12000
+        ).catch(() => null);
+
+        const after = await evaluate(
+          workerSession,
+          `(async () => {
+             const stored = await chrome.storage.local.get({ blockedHosts: {}, allowedHosts: [] });
+             const rules = await chrome.declarativeNetRequest.getDynamicRules();
+             return { allowed: stored.allowedHosts, blocked: Object.keys(stored.blockedHosts), rules: rules.length };
+           })()`
+        );
+
+        if (!resumed) guardProblems.push('allowing the host did not load the original page');
+        if (!after.allowed.includes('127.0.0.1')) guardProblems.push('host was not added to the allow list');
+        if (after.rules !== 0) guardProblems.push(`rules were not removed (${after.rules} left)`);
+        if (after.blocked.includes('127.0.0.1')) guardProblems.push('host is still in the blocked list');
+
+        if (guardProblems.length) fail(`guard: ${guardProblems.join(', ')}`);
+        else log(`✔ guard mode: ${interstitial.host} blocked next load, allow restores it`);
+
+        await client.send('Target.closeTarget', { targetId }).catch(() => {});
+      }
+
+      // Leave no rules behind for anything that runs afterwards.
+      await evaluate(
+        workerSession,
+        `chrome.storage.local.set({ guardEnabled: false, blockedHosts: {}, allowedHosts: [] })
+           .then(() => syncGuardRules())
+           .then(() => true)`
+      );
+    }
+
     await evaluate(workerSession, 'chrome.storage.local.set({ overlayEnabled: true })');
 
     client.close();

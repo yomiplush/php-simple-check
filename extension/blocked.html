@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PHP Simple Check — ブロックしました</title>
+    <link rel="stylesheet" href="blocked.css" />
+  </head>
+  <body>
+    <main class="card">
+      <p class="eyebrow">PHP Simple Check — 警戒モード</p>
+      <h1><span aria-hidden="true">🛑</span> このサイトはブロックされました</h1>
+
+      <p class="host" id="host">…</p>
+
+      <p class="lede">
+        このホストでは <strong>PHP 使用の兆候</strong> が検出されたため、警戒モードが読み込みを止めました。
+        内容を確認したうえで許可してください。
+      </p>
+
+      <dl class="facts" id="facts" hidden>
+        <dt>スコア</dt>
+        <dd id="score">-</dd>
+        <dt>検出時刻</dt>
+        <dd id="checked">-</dd>
+      </dl>
+
+      <section class="signals" id="signal-section" hidden>
+        <h2>検出していたシグナル</h2>
+        <ul id="signals"></ul>
+      </section>
+
+      <div class="actions">
+        <button type="button" id="allow" class="primary">許可して開く</button>
+        <button type="button" id="back" class="secondary">戻る</button>
+      </div>
+
+      <p class="note" id="note">
+        ブロックはこのホストへの今後のアクセスに適用されます。許可するとブロックを解除し、許可リストに追加します。
+      </p>
+
+      <p class="footer">
+        <button type="button" id="disable" class="link">警戒モードをオフにして開く</button>
+      </p>
+    </main>
+
+    <script src="blocked.js"></script>
+  </body>
+</html>

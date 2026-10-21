@@ -38,6 +38,23 @@
     }
   }
 
+  function showGuard(message) {
+    try {
+      PHPSimpleCheckOverlay.showGuardBanner({
+        host: message.host,
+        onAllow: function () {
+          void send({ type: 'php-simple-check:allow-host', host: message.host });
+        },
+        onLeave: function () {
+          if (history.length > 1) history.back();
+          else location.assign('about:blank');
+        }
+      });
+    } catch (error) {
+      /* banner is cosmetic */
+    }
+  }
+
   function render(result) {
     if (!result || !result.verdict) return;
     lastResult = result;
@@ -109,8 +126,12 @@
 
   try {
     chrome.runtime.onMessage.addListener(function (message) {
-      if (!message || message.type !== MESSAGE_RESULT) return;
-      render(message.result);
+      if (!message) return;
+      if (message.type === MESSAGE_RESULT) {
+        render(message.result);
+        return;
+      }
+      if (message.type === 'php-simple-check:guarded') showGuard(message);
     });
   } catch (error) {
     /* ignore */

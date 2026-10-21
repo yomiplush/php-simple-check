@@ -50,6 +50,103 @@ const CAPTURED_PREFIXES = ['x-drupal', 'x-typo3', 'x-symfony', 'x-debug-token', 
 const tabStates = new Map();
 const evalTimers = new Map();
 
+/* ------------------------------------------------------------- guard mode */
+/*
+ * "警戒モード": once a site is judged 🔴, block that host on subsequent
+ * navigations with a dynamic declarativeNetRequest rule that redirects the main
+ * frame to blocked.html. A response cannot be inspected before it is delivered,
+ * so the current load always completes — the guard kicks in from the next one.
+ */
+const GUARD_DEFAULTS = {
+  guardEnabled: false,
+  blockedHosts: {},
+  allowedHosts: []
+};
+
+async function readGuard() {
+  try {
+    const stored = await chrome.storage.local.get(GUARD_DEFAULTS);
+    return {
+      enabled: stored.guardEnabled === true,
+      blocked: stored.blockedHosts && typeof stored.blockedHosts === 'object' ? stored.blockedHosts : {},
+      allowed: Array.isArray(stored.allowedHosts) ? stored.allowedHosts.slice() : []
+    };
+  } catch (error) {
+    return { enabled: false, blocked: {}, allowed: [] };
+  }
+}
+
+async function writeGuard(guard) {
+  await chrome.storage.local.set({
+    guardEnabled: guard.enabled,
+    blockedHosts: guard.blocked,
+    allowedHosts: guard.allowed
+  });
+}
+
+async function syncGuardRules() {
+  let existing = [];
+  try {
+    existing = await chrome.declarativeNetRequest.getDynamicRules();
+  } catch (error) {
+    return;
+  }
+
+  const guard = await readGuard();
+  const hosts = guard.enabled ? Object.keys(guard.blocked).sort() : [];
+  const addRules = hosts.map(function (host, index) {
+    return {
+      id: index + 1,
+      priority: 1,
+      action: {
+        type: 'redirect',
+        redirect: {
+          url: chrome.runtime.getURL('blocked.html') + '?host=' + encodeURIComponent(host)
+        }
+      },
+      condition: { requestDomains: [host], resourceTypes: ['main_frame'] }
+    };
+  });
+
+  try {
+    await chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: existing.map(function (rule) { return rule.id; }),
+      addRules: addRules
+    });
+  } catch (error) {
+    console.error('[PHP Simple Check] could not update guard rules', error);
+  }
+}
+
+async function maybeGuard(tabId, result, pageUrl) {
+  if (!result || result.verdict !== 'php') return;
+
+  const guard = await readGuard();
+  if (!guard.enabled) return;
+
+  let host = '';
+  try {
+    host = new URL(pageUrl).hostname;
+  } catch (error) {
+    return;
+  }
+  if (!host || guard.allowed.indexOf(host) !== -1 || guard.blocked[host]) return;
+
+  guard.blocked[host] = {
+    url: pageUrl,
+    score: result.score,
+    at: Date.now(),
+    signals: result.signals
+      .filter(function (signal) { return signal.weight > 0; })
+      .slice(0, 5)
+      .map(function (signal) { return { label: signal.label, weight: signal.weight }; })
+  };
+
+  await writeGuard(guard);
+  await syncGuardRules();
+  notifyContent(tabId, { type: 'php-simple-check:guarded', host: host, url: pageUrl });
+}
+
 function blankState() {
   return {
     url: null,
@@ -203,9 +300,10 @@ async function resetAction(tabId) {
   }
 }
 
-function notifyContent(tabId, result) {
+function notifyContent(tabId, message) {
+  if (!message || !message.type) return;
   try {
-    const sending = chrome.tabs.sendMessage(tabId, { type: 'php-simple-check:result', result: result });
+    const sending = chrome.tabs.sendMessage(tabId, message);
     if (sending && typeof sending.catch === 'function') sending.catch(function () {});
   } catch (error) {
     /* no content script on this page */
@@ -294,7 +392,8 @@ async function evaluateTab(tabId) {
   void persistState(tabId, state);
 
   await applyBadge(tabId, result);
-  notifyContent(tabId, result);
+  notifyContent(tabId, { type: 'php-simple-check:result', result: result });
+  if (result.verdict === 'php') await maybeGuard(tabId, result, pageUrl);
   return result;
 }
 
@@ -388,6 +487,72 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     return true;
   }
 
+  if (type === 'php-simple-check:get-guard') {
+    (async function () {
+      sendResponse({ ok: true, guard: await readGuard() });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:set-guard') {
+    (async function () {
+      const guard = await readGuard();
+      guard.enabled = message.enabled === true;
+      await writeGuard(guard);
+      await syncGuardRules();
+      if (guard.enabled && message.tabId != null) await evaluateTab(message.tabId);
+      sendResponse({ ok: true, guard: await readGuard() });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:unblock-host') {
+    const host = String(message.host || '');
+    (async function () {
+      const guard = await readGuard();
+      if (host && guard.blocked[host]) {
+        delete guard.blocked[host];
+        await writeGuard(guard);
+        await syncGuardRules();
+      }
+      sendResponse({ ok: true, guard: await readGuard() });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:allow-host') {
+    const host = String(message.host || '');
+    (async function () {
+      const guard = await readGuard();
+      let url = 'https://' + host + '/';
+      if (host) {
+        if (guard.blocked[host]) {
+          if (guard.blocked[host].url) url = guard.blocked[host].url;
+          delete guard.blocked[host];
+        }
+        if (guard.allowed.indexOf(host) === -1) guard.allowed.push(host);
+        await writeGuard(guard);
+        await syncGuardRules();
+      }
+      sendResponse({ ok: Boolean(host), url: url, guard: await readGuard() });
+    })();
+    return true;
+  }
+
+  if (type === 'php-simple-check:unallow-host') {
+    const host = String(message.host || '');
+    (async function () {
+      const guard = await readGuard();
+      const index = guard.allowed.indexOf(host);
+      if (index !== -1) {
+        guard.allowed.splice(index, 1);
+        await writeGuard(guard);
+      }
+      sendResponse({ ok: true, guard: await readGuard() });
+    })();
+    return true;
+  }
+
   if (type === 'php-simple-check:rescan') {
     const tabId = message.tabId;
     (async function () {
@@ -442,5 +607,10 @@ chrome.runtime.onInstalled.addListener(function () {
     } catch (error) {
       /* ignore */
     }
+    await syncGuardRules();
   })();
+});
+
+chrome.runtime.onStartup.addListener(function () {
+  void syncGuardRules();
 });

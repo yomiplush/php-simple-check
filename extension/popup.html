@@ -46,6 +46,26 @@
         </label>
       </div>
 
+      <section class="block guard" id="guard-section">
+        <h2>警戒モード</h2>
+        <label class="toggle guard-toggle">
+          <input type="checkbox" id="guard-toggle" />
+          <span>PHP を検出したサイトをブロック</span>
+        </label>
+        <p class="guard-hint">
+          判定はページ読み込み後に行うため、ブロックは<strong>次回以降</strong>のアクセスに適用されます。
+        </p>
+
+        <div class="guard-group" id="blocked-wrap" hidden>
+          <h3 id="blocked-title">ブロック中</h3>
+          <ul class="guard-list" id="blocked-list"></ul>
+        </div>
+        <div class="guard-group" id="allowed-wrap" hidden>
+          <h3>許可済み</h3>
+          <ul class="guard-list" id="allowed-list"></ul>
+        </div>
+      </section>
+
       <p class="note">
         クライアント側で観測できるのは「兆候」だけです。PHP が動いていても応答に痕跡が出ない構成では 🟢 になります。
         判定結果は端末内でのみ処理され、外部へ送信しません。

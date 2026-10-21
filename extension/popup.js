@@ -96,6 +96,52 @@
     });
   }
 
+  function guardRow(host, label, action) {
+    var item = el('li');
+    item.appendChild(el('span', 'guard-host', host));
+    var button = el('button', 'mini', label);
+    button.type = 'button';
+    button.addEventListener('click', function () {
+      button.disabled = true;
+      void action().then(function (response) {
+        button.disabled = false;
+        if (response && response.guard) renderGuard(response.guard);
+      });
+    });
+    item.appendChild(button);
+    return item;
+  }
+
+  function renderGuard(guard) {
+    var blocked = guard && guard.blocked ? guard.blocked : {};
+    var allowed = guard && Array.isArray(guard.allowed) ? guard.allowed : [];
+    var blockedHosts = Object.keys(blocked).sort();
+
+    var guardEnabled = Boolean(guard && guard.enabled);
+    els.guardToggle.checked = guardEnabled;
+    els.blockedTitle.textContent = guardEnabled ? 'ブロック中' : '記録済み（警戒モード OFF）';
+    els.blockedWrap.hidden = blockedHosts.length === 0;
+    els.allowedWrap.hidden = allowed.length === 0;
+
+    els.blockedList.textContent = '';
+    blockedHosts.forEach(function (host) {
+      els.blockedList.appendChild(
+        guardRow(host, '解除', function () {
+          return send({ type: 'php-simple-check:unblock-host', host: host });
+        })
+      );
+    });
+
+    els.allowedList.textContent = '';
+    allowed.slice().sort().forEach(function (host) {
+      els.allowedList.appendChild(
+        guardRow(host, 'ブロックに戻す', function () {
+          return send({ type: 'php-simple-check:unallow-host', host: host });
+        })
+      );
+    });
+  }
+
   function renderEmpty(message) {
     els.emptySection.hidden = !message;
     els.emptyText.textContent = message || '';
@@ -135,6 +181,12 @@
     els.emptyText = $('empty-text');
     els.rescan = $('rescan');
     els.overlayToggle = $('overlay-toggle');
+    els.guardToggle = $('guard-toggle');
+    els.blockedWrap = $('blocked-wrap');
+    els.blockedTitle = $('blocked-title');
+    els.blockedList = $('blocked-list');
+    els.allowedWrap = $('allowed-wrap');
+    els.allowedList = $('allowed-list');
 
     els.version.textContent = 'v' + PHPSimpleCheck.version;
 
@@ -146,9 +198,21 @@
     }
 
     els.rescan.addEventListener('click', function () { void rescan(); });
+
+    els.guardToggle.addEventListener('change', function () {
+      var enabled = els.guardToggle.checked;
+      els.guardToggle.disabled = true;
+      void send({ type: 'php-simple-check:set-guard', enabled: enabled, tabId: activeTabId }).then(function (response) {
+        els.guardToggle.disabled = false;
+        if (response && response.guard) renderGuard(response.guard);
+      });
+    });
     els.overlayToggle.addEventListener('change', function () {
       chrome.storage.local.set({ overlayEnabled: els.overlayToggle.checked }).catch(function () {});
     });
+
+    var guardResponse = await send({ type: 'php-simple-check:get-guard' });
+    renderGuard(guardResponse && guardResponse.guard ? guardResponse.guard : null);
 
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs && tabs[0];
