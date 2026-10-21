@@ -13,12 +13,15 @@ A Manifest V3 extension for Chromium browsers — plus userscripts for Safari an
 [![Permissions](https://img.shields.io/badge/store%20build-storage%20only-brightgreen.svg)](docs/store/checklist.md)
 
 - Verdicts appear on the **toolbar icon colour**, a small toolbar badge, an on-page badge and in the popup.
+- **Copy report** in the popup puts a plain-text fingerprint (URL, verdict, signals, observed headers) on your clipboard for a bug report or ticket.
 - The detection engine is a single file (`extension/lib/detector.js`) shared by every platform, so the extension and the userscripts always agree.
 - The UI is translated into **12 languages** and follows your browser language automatically.
 - Everything runs locally: no servers, no analytics, no remote code.
+- It is a stack fingerprint, not a malware or security scanner — see [What this is not](#what-this-is-not).
 
 ## Contents
 
+- [What this is not](#what-this-is-not)
 - [Two builds](#two-builds)
 - [Downloads](#downloads)
 - [Install](#install)
@@ -32,6 +35,16 @@ A Manifest V3 extension for Chromium browsers — plus userscripts for Safari an
 - [Development](#development)
 - [License](#license)
 
+## What this is not
+
+This extension answers one question — *is this page served by PHP?* — from signals the page itself exposes. It is **not** a malware or security scanner:
+
+- "Uses PHP" is not a risk rating. WordPress, Drupal and most shared hosting run PHP.
+- It cannot see a web shell, a backdoored plugin, a compromised upload directory or a server-side intrusion: those live on the server and leave no fingerprint in the HTML the browser receives.
+- It never blocks or redirects a navigation in the store build, and the first visit can never be stopped even in the full build (detection happens after the response).
+
+If you are dealing with an active PHP-based compromise, use server-side scanning, patched CMS/plugins, upload-execution hardening, a WAF and endpoint protection. This tool can help you *triage which hosts are PHP-backed* and produce a copyable fingerprint report — nothing more.
+
 ## Two builds
 
 | | Store build (`dist/store/…`) | Full build (`extension/`) |
@@ -41,7 +54,11 @@ A Manifest V3 extension for Chromium browsers — plus userscripts for Safari an
 | Response headers | via a same-origin `HEAD` request | same |
 | HttpOnly cookie names | no (`document.cookie` only) | yes (`chrome.cookies`) |
 | Guard mode (host blocking) | not included | included |
+| Guard/cookie code inside the package | **none** — stripped at build time | present |
+| Guard-only UI strings | **none** — filtered out | present |
 | Intended for | Chrome Web Store | sideloading from GitHub |
+
+The two packages are generated from one source tree but share no unreachable features: source regions marked `@store-strip` are removed while building the store package, and the build syntax-checks the result. A reviewer opening the store zip finds no cookie, network-interception or blocking code, and no UI strings for features the build cannot run.
 
 Both builds are generated from the same sources; the worker checks for the APIs it needs at runtime (`CAPABILITIES`), so the store build simply hides the features it cannot support. The store build passes the same headless-Chrome end-to-end run:
 

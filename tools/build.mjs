@@ -19,6 +19,7 @@
  */
 import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { createZip } from './zip.mjs';
 
@@ -36,6 +37,42 @@ const USERSCRIPT_LIBS = ['detector.js', 'i18n-data.js', 'i18n.js', 'collect-dom.
 
 /** Guard-only files, removed from the store build (no declarativeNetRequest). */
 const GUARD_ONLY_FILES = ['blocked.html', 'blocked.js', 'blocked.css'];
+
+/**
+ * Regions marked with @store-strip are removed from the store copy, so the
+ * package it uploads contains only the code it can actually run.
+ */
+const STORE_STRIP_MARKERS = /^\s*(?:\/\/|<!--) @store-strip-(?:start|end)(?: -->)?\s*$/gm;
+
+/** Nesting-aware removal of @store-strip regions (keeps the line structure). */
+function stripStoreRegions(text) {
+  const kept = [];
+  let depth = 0;
+  for (const line of text.split('\n')) {
+    if (line.includes('@store-strip-start')) {
+      depth += 1;
+      continue;
+    }
+    if (line.includes('@store-strip-end')) {
+      depth = Math.max(0, depth - 1);
+      continue;
+    }
+    if (depth === 0) kept.push(line);
+  }
+  return kept.join('\n');
+}
+
+/** UI copy that only makes sense with guard mode. */
+const GUARD_I18N_PREFIXES = [
+  'banner.',
+  'blocked.',
+  'popup.guard',
+  'popup.blocked',
+  'popup.recorded',
+  'popup.allowed',
+  'popup.remove',
+  'popup.blockAgain'
+];
 
 const USERSCRIPT_VARIANTS = [
   { file: 'php-simple-check.user.js', suffix: '', platform: '' },
@@ -192,6 +229,11 @@ async function buildUserscripts(manifest, locales) {
   bodies.push('/* ---- userscript/main.js ---- */');
   bodies.push(main.replace(/\s+$/, ''));
 
+  // Userscripts have no "store" variant: drop the markers, keep the code.
+  for (let i = 1; i < bodies.length; i += 1) {
+    bodies[i] = bodies[i].replace(STORE_STRIP_MARKERS, '');
+  }
+
   const built = [];
   for (const variant of USERSCRIPT_VARIANTS) {
     const content = `${userscriptHeader(manifest, locales, variant)}\n\n${bodies.join('\n\n')}\n`;
@@ -234,6 +276,41 @@ async function buildStoreExtension(manifest) {
   for (const file of GUARD_ONLY_FILES) {
     await rm(path.join(storeDir, file), { force: true });
   }
+
+  // Remove the code for features the store build cannot use, and syntax-check
+  // the result so a broken marker can never reach a release.
+  for (const file of await listFiles(storeDir)) {
+    if (!/\.(js|html)$/.test(file.name)) continue;
+    const source = await readFile(file.file, 'utf8');
+    if (source.indexOf('@store-strip') === -1) continue;
+    const stripped = stripStoreRegions(source);
+    if (file.name.endsWith('.js')) {
+      try {
+        new vm.Script(stripped, { filename: file.name });
+      } catch (error) {
+        throw new Error(`store transform broke ${file.name}: ${error.message}`);
+      }
+    }
+    await writeFile(file.file, stripped, 'utf8');
+  }
+
+  // The store bundle ships only the strings its UI can show.
+  const i18nFile = path.join(storeDir, 'lib', 'i18n-data.js');
+  const i18nSource = await readFile(i18nFile, 'utf8');
+  const i18n = JSON.parse(i18nSource.slice(i18nSource.indexOf('{'), i18nSource.lastIndexOf('}') + 1));
+  const storeI18n = {};
+  for (const [language, table] of Object.entries(i18n)) {
+    storeI18n[language] = Object.fromEntries(
+      Object.entries(table).filter(
+        ([key]) => !GUARD_I18N_PREFIXES.some((prefix) => key.startsWith(prefix))
+      )
+    );
+  }
+  await writeFile(
+    i18nFile,
+    `var PHPSimpleCheckStrings = ${JSON.stringify(storeI18n, null, 2)};\n`,
+    'utf8'
+  );
 
   const storeManifest = JSON.parse(JSON.stringify(manifest));
   // The store build asks for the absolute minimum: local settings only.

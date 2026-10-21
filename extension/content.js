@@ -39,6 +39,7 @@
     }
   }
 
+  // @store-strip-start
   function showGuard(message) {
     try {
       PHPSimpleCheckOverlay.showGuardBanner({
@@ -56,6 +57,7 @@
     }
   }
 
+  // @store-strip-end
   function render(result) {
     if (!result || !result.verdict) return;
     lastResult = result;
@@ -139,7 +141,9 @@
         render(message.result);
         return;
       }
+      // @store-strip-start
       if (message.type === 'php-simple-check:guarded') showGuard(message);
+      // @store-strip-end
     });
   } catch (error) {
     /* ignore */

@@ -101,6 +101,7 @@ EXTENSION_DIR=dist/store/php-simple-check EXPECT_MINIMAL=1 \
 | Unclear single purpose | Stated in the listing and in the privacy tab; the UI does exactly one thing. |
 | Misleading security claims | The listing says explicitly that this is a stack fingerprint, not malware protection. |
 | Broken install / blank popup | Verified by the headless E2E run against the exact store build (`EXPECT_MINIMAL=1`). |
+| Advertised feature missing from the build | Guard mode is stripped from the store package (code, strings and files); the listing never mentions it. |
 | Missing functionality for reviewers | Reviewer test script in `listing.md`: the badge, the popup, and two example sites. |
 | Icon mismatch | 128×128 PNG used for both the manifest and the store listing. |
 

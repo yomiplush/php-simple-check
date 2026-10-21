@@ -54,6 +54,11 @@ requests, and never sends anything off the device.
 | `declarativeNetRequest` + `host_permissions` | Powers guard mode (blocking flagged hosts), which needs broad access and is a second purpose. | Guard mode is not in the store build; it remains in the GitHub build. |
 | `blocked.html/js/css` | Guard interstitial only. | Not shipped, so no unused web-accessible resources. |
 
+This is enforced by the build rather than by documentation: the store package is
+generated with the `@store-strip` regions removed, so it contains **no** cookie,
+network-interception or blocking code, no `blocked.*` files and no guard-only UI
+strings. `npm run check:store` fails if any of that leaks in.
+
 **If you want guard mode back in the store build** it becomes a second, quite
 different purpose with broad host access and request-redirect privileges. That is
 a legitimate feature, but it needs its own permission justifications and a much
@@ -68,8 +73,13 @@ longer review conversation; it is not a "minimal risk" submission.
 - hygiene: version match, no guard files, no userscripts/tests/source maps,
   no `eval`, no string timers, no remote URLs, no inline scripts or `on*`
   handlers, no `document.write`, no `innerHTML` assignment
+- separation: no `chrome.cookies` / `chrome.declarativeNetRequest` /
+  `blocked.html` / guard UI strings in the store bundle, no strip markers left
 - reviewer experience: popup present, `minimum_chrome_version`, `homepage_url`,
   summary length (≤132), "no data collection" statement
+- claims: the manifest, README and listing must not promise malware or security
+  protection, and must explicitly state that this is not a malware/security
+  scanner (`Copy report` exists for triage, not for protection)
 
 CI and the release workflow run this after `npm run build`, so a non-compliant
 package cannot be published by accident.

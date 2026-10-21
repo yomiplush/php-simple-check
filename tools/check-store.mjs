@@ -166,12 +166,59 @@ async function main() {
     !code.some((file) => !file.name.endsWith('.html') && /\.innerHTML\s*=/.test(file.body)),
     code.filter((file) => !file.name.endsWith('.html') && /\.innerHTML\s*=/.test(file.body)).map((file) => file.name).join(', ')
   );
+  const joined = code.map((file) => file.body).join('\n');
+  check(
+    'no cookie / DNR / guard code in the store bundle',
+    !/chrome\.cookies|chrome\.declarativeNetRequest|blocked\.html|guardEnabled|php-simple-check:get-guard/.test(joined),
+    (joined.match(/chrome\.cookies|chrome\.declarativeNetRequest|blocked\.html|guardEnabled/) || [])[0] || ''
+  );
+  check('no build markers left in the store bundle', !joined.includes('@store-strip'));
+
+  const storeI18nSource = await readFile(path.join(STORE_DIR, 'lib', 'i18n-data.js'), 'utf8');
+  const storeI18n = JSON.parse(
+    storeI18nSource.slice(storeI18nSource.indexOf('{'), storeI18nSource.lastIndexOf('}') + 1)
+  );
+  const guardKeys = Object.keys(storeI18n.en).filter((key) =>
+    /^(banner\.|blocked\.|popup\.guard|popup\.blocked|popup\.recorded|popup\.allowed|popup\.remove|popup\.blockAgain)/.test(key)
+  );
+  check('store translations contain no guard strings', guardKeys.length === 0, guardKeys.join(', '));
+
   check(
     'store bundle declares no forbidden APIs in the manifest',
     !['cookies', 'webRequest', 'webRequestBlocking', 'declarativeNetRequest', 'management', 'history'].some((api) =>
       (manifest.permissions || []).includes(api)
     )
   );
+
+  process.stdout.write('\nPage wiring\n');
+  for (const page of ['popup.html']) {
+    const html = await readFile(path.join(STORE_DIR, page), 'utf8');
+    for (const match of html.matchAll(/<script[^>]+src="([^"]+)"/g)) {
+      check(`${page} → ${match[1]}`, await exists(path.join(STORE_DIR, match[1])));
+    }
+    for (const match of html.matchAll(/<link[^>]+href="([^"]+)"/g)) {
+      check(`${page} → ${match[1]}`, await exists(path.join(STORE_DIR, match[1])));
+    }
+  }
+
+  process.stdout.write('\nMarketing claims\n');
+  const listingText = await readFile(path.join(ROOT, 'docs', 'store', 'listing.md'), 'utf8');
+  const readmeText = await readFile(path.join(ROOT, 'README.md'), 'utf8');
+  const manifestText = JSON.stringify(manifest);
+
+  // The item fingerprints a stack; it must never read like a malware product.
+  const AFFIRMATIVE = /(protects? (?:you|users|against)|blocks? (?:malware|ransomware|threats|attackers)|detects? malware|anti-?malware|anti-?virus|virus scanner|removes? (?:malware|viruses)|guarantee[sd]?\b|100% safe|fully secure|prevents? (?:infection|malware))/i;
+  const DISCLAIMER = /(not (?:a|an) (?:malware|security|anti-?virus)|not designed (?:as|to|for)|does not (?:detect|scan|protect)|is not a (?:malware|security))/i;
+
+  const claimHits = (text) => {
+    const match = text.match(AFFIRMATIVE);
+    return match ? match[0] : '';
+  };
+  check('listing makes no security-protection claims', !AFFIRMATIVE.test(listingText), claimHits(listingText));
+  check('README makes no security-protection claims', !AFFIRMATIVE.test(readmeText), claimHits(readmeText));
+  check('manifest makes no security-protection claims', !AFFIRMATIVE.test(manifestText), claimHits(manifestText));
+  check('listing states it is not a malware/security scanner', DISCLAIMER.test(listingText));
+  check('README states it is not a malware/security scanner', DISCLAIMER.test(readmeText));
 
   process.stdout.write('\nReviewer experience\n');
   check('action popup is present', Boolean(manifest.action && manifest.action.default_popup));

@@ -38,7 +38,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '2.1.0';
+  var VERSION = '2.2.0';
 
   var VERDICTS = {
     php: {

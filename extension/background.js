@@ -9,9 +9,10 @@
  *   3. Run the shared detector, paint the toolbar icon/badge and answer the
  *      popup.
  *
+ * // @store-strip-start
  * Guard mode (blocking flagged hosts) only exists in builds that ship the
- * declarativeNetRequest permission; every guard entry point checks
- * CAPABILITIES.guard first, so the same source powers the minimal store build.
+ * declarativeNetRequest permission; the store package is generated without it.
+ * // @store-strip-end
  */
 'use strict';
 
@@ -22,14 +23,17 @@ const t = PHPSimpleCheckI18n.t;
 const STATE_PREFIX = 'php-simple-check:tab:';
 const MAX_TRACKED_TABS = 60;
 
-/** APIs available in this build (the store build only has "storage"). */
+/**
+ * Capabilities follow what this build declares in its manifest, so one source
+ * tree produces two clearly separated builds:
+ *   store  -> permissions ["storage"]              -> cookies: false, guard: false
+ *   github -> cookies + declarativeNetRequest      -> cookies: true,  guard: true
+ * The store package is generated without the code for the disabled features.
+ */
+const DECLARED_PERMISSIONS = chrome.runtime.getManifest().permissions || [];
 const CAPABILITIES = {
-  cookies: Boolean(typeof chrome.cookies !== 'undefined' && chrome.cookies && chrome.cookies.getAll),
-  guard: Boolean(
-    typeof chrome.declarativeNetRequest !== 'undefined' &&
-    chrome.declarativeNetRequest &&
-    chrome.declarativeNetRequest.updateDynamicRules
-  )
+  cookies: DECLARED_PERMISSIONS.indexOf('cookies') !== -1,
+  guard: DECLARED_PERMISSIONS.indexOf('declarativeNetRequest') !== -1
 };
 
 /** The action icon itself shows the verdict, so the toolbar reads at a glance. */
@@ -129,6 +133,7 @@ function scheduleEvaluation(tabId, delay) {
   evalTimers.set(tabId, timer);
 }
 
+// @store-strip-start
 /* ---------------------------------------------------------------- guard mode
  *
  * "Guard mode": once a site is judged 🔴, block that host on subsequent
@@ -229,6 +234,7 @@ async function maybeGuard(tabId, result, pageUrl) {
   notifyContent(tabId, { type: 'php-simple-check:guarded', host: host, url: pageUrl });
 }
 
+// @store-strip-end
 /* ---------------------------------------------------------------- action UI */
 
 async function applyBadge(tabId, result) {
@@ -296,6 +302,7 @@ async function evaluateTab(tabId) {
   const headers = domPayload && domPayload.headers ? domPayload.headers : null;
 
   let cookieNames = [];
+  // @store-strip-start
   if (CAPABILITIES.cookies) {
     try {
       const cookies = await chrome.cookies.getAll({ url: pageUrl });
@@ -304,6 +311,7 @@ async function evaluateTab(tabId) {
       /* restricted URL — fall back to what the page itself could read */
     }
   }
+  // @store-strip-end
   if (!cookieNames.length && domPayload && Array.isArray(domPayload.cookieNames)) {
     cookieNames = domPayload.cookieNames;
   }
@@ -330,7 +338,9 @@ async function evaluateTab(tabId) {
 
   await applyBadge(tabId, result);
   notifyContent(tabId, { type: 'php-simple-check:result', result: result });
+  // @store-strip-start
   await maybeGuard(tabId, result, pageUrl);
+  // @store-strip-end
   return result;
 }
 
@@ -387,6 +397,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     return true;
   }
 
+  // @store-strip-start
   if (type === 'php-simple-check:get-guard') {
     (async function () {
       sendResponse({ ok: true, guard: await readGuard(), capabilities: CAPABILITIES });
@@ -462,6 +473,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     return true;
   }
 
+  // @store-strip-end
   return undefined;
 });
 
@@ -505,10 +517,14 @@ chrome.runtime.onInstalled.addListener(function () {
     } catch (error) {
       /* ignore */
     }
+    // @store-strip-start
     await syncGuardRules();
+    // @store-strip-end
   })();
 });
 
 chrome.runtime.onStartup.addListener(function () {
+  // @store-strip-start
   void syncGuardRules();
+  // @store-strip-end
 });

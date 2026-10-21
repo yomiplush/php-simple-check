@@ -69,6 +69,7 @@
     '}'
   ].join('\n');
 
+  // @store-strip-start
   /* ------------------------------------------------------------ guard banner */
 
   var BANNER_ID = 'php-simple-check-banner';
@@ -159,6 +160,7 @@
     banner.onLeave = settings.onLeave || null;
   }
 
+  // @store-strip-end
   var state = {
     host: null,
     refs: null,
@@ -381,8 +383,10 @@
     hide: hide,
     show: show,
     destroy: destroy,
+    // @store-strip-start
     showGuardBanner: showGuardBanner,
     hideGuardBanner: hideGuardBanner,
+    // @store-strip-end
     onClose: function (handler) { state.onClose = handler; }
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

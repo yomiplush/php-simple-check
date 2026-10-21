@@ -195,7 +195,10 @@ test('every committed userscript matches its sources and metadata', async () => 
     assert.ok(userscript.includes('// @noframes'));
 
     for (const lib of ['detector.js', 'i18n-data.js', 'i18n.js', 'collect-dom.js', 'overlay.js']) {
-      const source = (await read(`extension/lib/${lib}`)).replace(/\s+$/, '');
+      // The userscript build drops the @store-strip marker lines but keeps the code.
+      const source = (await read(`extension/lib/${lib}`))
+        .replace(/^\s*\/\/ @store-strip-(?:start|end)\s*$/gm, '')
+        .replace(/\s+$/, '');
       assert.ok(userscript.includes(source), `${lib} is stale in ${variant.file} — run npm run build`);
     }
     assert.ok(userscript.includes(main), `userscript/main.js is stale in ${variant.file} — run npm run build`);

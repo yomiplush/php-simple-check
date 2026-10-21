@@ -29,7 +29,11 @@
 
   var els = {};
   var activeTabId = null;
+  // @store-strip-start
   var capabilities = { guard: true };
+  // @store-strip-end
+  var lastResult = null;
+  var copyTimer = null;
 
   function $(id) {
     return document.getElementById(id);
@@ -58,6 +62,11 @@
   function weightClass(weight) {
     if (weight < 0) return 'weight negative';
     return weight >= 3 ? 'weight strong' : 'weight weak';
+  }
+
+  function setCopyState(result) {
+    els.copy.disabled = !result;
+    els.copyStatus.hidden = true;
   }
 
   function renderVerdict(result) {
@@ -115,6 +124,7 @@
     });
   }
 
+  // @store-strip-start
   function guardRow(host, label, action) {
     var item = el('li');
     item.appendChild(el('span', 'guard-host', host));
@@ -162,12 +172,15 @@
     });
   }
 
+  // @store-strip-end
   function renderEmpty(message) {
     els.emptySection.hidden = !message;
     els.emptyText.textContent = message || '';
   }
 
   function render(result) {
+    lastResult = result || null;
+    setCopyState(lastResult);
     renderVerdict(result);
     renderSignals(result);
     renderFacts(result);
@@ -200,17 +213,23 @@
     els.emptySection = $('empty-section');
     els.emptyText = $('empty-text');
     els.rescan = $('rescan');
+    els.copy = $('copy');
+    els.copyStatus = $('copy-status');
     els.overlayToggle = $('overlay-toggle');
+    // @store-strip-start
     els.guardSection = $('guard-section');
+    els.guardTitle = null;
     els.guardToggle = $('guard-toggle');
     els.blockedWrap = $('blocked-wrap');
     els.blockedTitle = $('blocked-title');
     els.blockedList = $('blocked-list');
     els.allowedWrap = $('allowed-wrap');
     els.allowedList = $('allowed-list');
+    // @store-strip-end
 
     applyTranslations();
     els.version.textContent = 'v' + PHPSimpleCheck.version;
+    els.copyStatus.hidden = true;
 
     try {
       var settings = await chrome.storage.local.get({ overlayEnabled: true });
@@ -221,6 +240,23 @@
 
     els.rescan.addEventListener('click', function () { void rescan(); });
 
+    els.copy.addEventListener('click', function () {
+      if (!lastResult) return;
+      var text = PHPSimpleCheckReport.build(lastResult);
+      var finish = function (ok) {
+        els.copyStatus.hidden = false;
+        els.copyStatus.textContent = t(ok ? 'popup.copied' : 'popup.copyFailed');
+        clearTimeout(copyTimer);
+        copyTimer = setTimeout(function () { els.copyStatus.hidden = true; }, 2000);
+      };
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+        finish(false);
+        return;
+      }
+      navigator.clipboard.writeText(text).then(function () { finish(true); }, function () { finish(false); });
+    });
+
+    // @store-strip-start
     els.guardToggle.addEventListener('change', function () {
       var enabled = els.guardToggle.checked;
       els.guardToggle.disabled = true;
@@ -233,11 +269,14 @@
       chrome.storage.local.set({ overlayEnabled: els.overlayToggle.checked }).catch(function () {});
     });
 
+    // @store-strip-start
     var guardResponse = await send({ type: 'php-simple-check:get-guard' });
     capabilities = (guardResponse && guardResponse.capabilities) || { guard: true };
     els.guardSection.hidden = !capabilities.guard;
     renderGuard(guardResponse && guardResponse.guard ? guardResponse.guard : null);
 
+    // @store-strip-end
+    // @store-strip-end
     var tabs = await chrome.tabs.query({ active: true, currentWindow: true });
     var tab = tabs && tabs[0];
     if (!tab || tab.id == null) {
