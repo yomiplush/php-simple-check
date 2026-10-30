@@ -1821,6 +1821,9 @@ var PHPSimpleCheckStrings = {
     host.style.cssText =
       'all:initial;position:fixed;right:calc(' + offset + 'px + env(safe-area-inset-right, 0px));' +
       'bottom:calc(' + offset + 'px + env(safe-area-inset-bottom, 0px));z-index:2147483647;display:block;';
+    var rightOffset = host.style.right;
+    var leftOffset = 'calc(' + offset + 'px + env(safe-area-inset-left, 0px))';
+    var onLeft = false;
     var shadow = host.attachShadow({ mode: 'open' });
 
     var style = el('style');
@@ -1876,6 +1879,16 @@ var PHPSimpleCheckStrings = {
     badge.appendChild(badgeLabel);
     badge.addEventListener('click', function () {
       panel.hidden = !panel.hidden;
+    });
+    // Free the page control under the mouse. Keep the new corner until the
+    // next entry, rather than bouncing back as soon as the pointer leaves.
+    // Tab to the badge to open details; touch and pen keep their tap behavior.
+    badge.addEventListener('pointerenter', function (event) {
+      if (event.pointerType !== 'mouse' || !panel.hidden || shadow.activeElement) return;
+      onLeft = !onLeft;
+      host.style.left = onLeft ? leftOffset : 'auto';
+      host.style.right = onLeft ? 'auto' : rightOffset;
+      wrap.style.alignItems = onLeft !== (textDirection === 'rtl') ? 'flex-start' : 'flex-end';
     });
 
     wrap.appendChild(panel);

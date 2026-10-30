@@ -13,6 +13,7 @@ A Manifest V3 extension for Chromium browsers — plus userscripts for Safari an
 [![Permissions](https://img.shields.io/badge/store%20build-storage%20only-brightgreen.svg)](docs/store/checklist.md)
 
 - Verdicts appear on the **toolbar icon colour**, a small toolbar badge, an on-page badge and in the popup.
+- Hovering the on-page badge with a mouse moves it to the opposite bottom corner, freeing controls underneath. Use Tab then Enter to open its details; touch and pen still tap to open. An open or keyboard-focused badge stays in place.
 - **Copy report** in the popup puts a plain-text fingerprint (URL, verdict, signals, observed headers) on your clipboard for a bug report or ticket.
 - The detection engine is a single file (`extension/lib/detector.js`) shared by every platform, so the extension and the userscripts always agree.
 - The UI is translated into **12 languages** and follows your browser language automatically.

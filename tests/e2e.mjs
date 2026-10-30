@@ -243,6 +243,70 @@ async function main() {
       return result.value;
     }
 
+    // A real mouse must free the underlying page control, without bouncing
+    // back on pointerleave. Focused badges remain usable with the keyboard.
+    async function checkBadgeAvoidance(sessionId, label) {
+      await client.send('Page.bringToFront', {}, sessionId);
+      const rect = () => evaluate(sessionId, `(() => {
+        const badge = document.getElementById('php-simple-check-badge').shadowRoot.querySelector('.badge');
+        const r = badge.getBoundingClientRect();
+        return { x: r.x, y: r.y, width: r.width, height: r.height, vw: innerWidth };
+      })()`);
+      const move = (r) => client.send('Input.dispatchMouseEvent', {
+        type: 'mouseMoved', x: r.x + r.width / 2, y: r.y + r.height / 2
+      }, sessionId);
+      const initial = await rect();
+      await evaluate(sessionId, `(() => {
+        const r = ${JSON.stringify(initial)};
+        const button = document.createElement('button');
+        button.id = 'under-badge';
+        button.textContent = 'Underlying control';
+        Object.assign(button.style, { position: 'fixed', left: r.x + 'px', top: r.y + 'px',
+          width: r.width + 'px', height: r.height + 'px' });
+        button.onclick = () => button.dataset.clicked = 'yes';
+        document.body.appendChild(button);
+      })()`);
+      await move(initial);
+      const left = await waitFor(`${label} badge avoids left`, async () => {
+        const r = await rect();
+        return r.x < r.vw / 2 ? r : null;
+      }, 2000);
+      await client.send('Input.dispatchMouseEvent', {
+        type: 'mousePressed', button: 'left', clickCount: 1,
+        x: initial.x + initial.width / 2, y: initial.y + initial.height / 2
+      }, sessionId);
+      await client.send('Input.dispatchMouseEvent', {
+        type: 'mouseReleased', button: 'left', clickCount: 1,
+        x: initial.x + initial.width / 2, y: initial.y + initial.height / 2
+      }, sessionId);
+      if (await evaluate(sessionId, `document.getElementById('under-badge').dataset.clicked`) !== 'yes') {
+        throw new Error(`${label}: badge blocks the underlying control`);
+      }
+      if ((await rect()).x !== left.x) throw new Error(`${label}: badge bounced back`);
+      await move(left);
+      await waitFor(`${label} badge avoids right`, async () => (await rect()).x > initial.vw / 2, 2000);
+      await evaluate(sessionId, `(() => {
+        const root = document.getElementById('php-simple-check-badge').shadowRoot;
+        const badge = root.querySelector('.badge');
+        badge.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+        badge.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'pen' }));
+      })()`);
+      if ((await rect()).x !== initial.x) throw new Error(`${label}: touch/pen moved the badge`);
+      await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 }, sessionId);
+      await evaluate(sessionId, `document.getElementById('php-simple-check-badge').shadowRoot.querySelector('.badge').focus()`);
+      await move(initial);
+      if ((await rect()).x !== initial.x) throw new Error(`${label}: focused badge moved`);
+      await client.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r' }, sessionId);
+      await client.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 }, sessionId);
+      const open = await evaluate(sessionId, `!document.getElementById('php-simple-check-badge').shadowRoot.querySelector('.panel').hidden`);
+      if (!open) throw new Error(`${label}: keyboard cannot open details`);
+      await evaluate(sessionId, `document.getElementById('php-simple-check-badge').shadowRoot.querySelector('.badge').blur()`);
+      await client.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 0, y: 0 }, sessionId);
+      await move(initial);
+      if ((await rect()).x !== initial.x) throw new Error(`${label}: open panel moved`);
+      log(`✔ ${label}: mouse avoids both ways, underlying control clickable, touch/pen and keyboard preserved`);
+    }
+
     // Chrome ships component extensions with their own service workers, so the
     // target has to be identified by its manifest name rather than its URL.
     const english = await readJson(path.join(ROOT, 'locales/en.json'));
@@ -422,6 +486,7 @@ async function main() {
 
       if (problems.length) fail(`${testCase.path}: ${problems.join(', ')}`);
       else log(`✔ ${testCase.path} → ${testCase.emoji} ${testCase.badgeLabel} (toolbar "${action.text}")`);
+      if (testCase.path === '/static/') await checkBadgeAvoidance(sessionId, 'extension');
 
       await client.send('Target.closeTarget', { targetId });
     }
@@ -563,6 +628,7 @@ async function main() {
 
       if (problems.length) fail(`userscript ${testCase.path}: ${problems.join(', ')}`);
       else log(`✔ userscript ${testCase.path} → ${testCase.emoji} ${testCase.badgeLabel}`);
+      if (testCase.path === '/static/') await checkBadgeAvoidance(sessionId, 'userscript');
 
       await client.send('Target.closeTarget', { targetId });
     }
