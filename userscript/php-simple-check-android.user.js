@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PHP Simple Check (Android)
 // @namespace    https://github.com/yomiplush/php-simple-check
-// @version      2.3.0
+// @version      2.3.1
 // @description  For Firefox on Android (Tampermonkey). Checks response headers, cookies and the DOM to tell whether a site is served by PHP (🔴 PHP / 🟢 no PHP).
 // @author       yomiplush
 // @homepageURL  https://github.com/yomiplush/php-simple-check
@@ -58,7 +58,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '2.3.0';
+  var VERSION = '2.3.1';
 
   var VERDICTS = {
     php: {
